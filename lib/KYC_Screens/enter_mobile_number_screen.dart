@@ -18,6 +18,7 @@ class _EnterMobileNumberScreenState extends State<EnterMobileNumberScreen> {
   bool _isMobileSubmitted = false;
   final String _fullName = 'Shivani Rajendra Pimple';
 
+// added enter mobile screen
   @override
   Widget build(BuildContext context) {
     return Scaffold(

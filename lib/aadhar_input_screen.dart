@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:pcmc_jeevan_praman/KYC_Screens/enter_mobile_number_screen.dart';
-import 'package:pcmc_jeevan_praman/view_button_screen.dart';
+import 'package:pcmc_jeevan_praman/KYC_Screens/enter_mobile_number_kyc_screen.dart';
+import 'package:pcmc_jeevan_praman/Life_certificate_generate_screen/view_button_screen.dart';
 
 class AadharInputScreen extends StatefulWidget {
   const AadharInputScreen({super.key});
@@ -84,7 +84,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
         // _showInvalidPopup(
         //     'Error: ${response.statusCode}. Please enter the correct PPO number.');
         _showInvalidPopup(
-          'Note: ${response.statusCode}. Please Complete Your KYC First.\nकृपया प्रथम तुमचे केवायसी पूर्ण करा.',
+          'Please Complete Your KYC First.\nकृपया प्रथम तुमचे केवायसी पूर्ण करा.',
           navigateToKycScreen: true,
         );
       }
@@ -307,7 +307,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          EnterMobileNumberScreen(ppoNumber: currentPpo),
+                          EnterMobileNumberKYCScreen(ppoNumber: currentPpo),
                     ),
                   ).then((returnedPpo) {
                     if (returnedPpo != null) {

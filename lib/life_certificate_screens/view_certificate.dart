@@ -23,7 +23,7 @@ class _CertificateWebViewScreenState extends State<CertificateWebViewScreen> {
             'View Certificate',
             style: TextStyle(
               color: Colors.black, // White text color for contrast
-              fontSize: 22, // Font size for the title
+              fontSize: 20, // Font size for the title
               fontWeight: FontWeight.bold,
             ),
           ),

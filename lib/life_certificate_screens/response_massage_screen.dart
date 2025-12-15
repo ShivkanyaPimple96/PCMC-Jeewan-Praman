@@ -17,7 +17,7 @@ class ResponseScreen extends StatelessWidget {
           padding: EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.0),// Rounded corners
+            borderRadius: BorderRadius.circular(20.0), // Rounded corners
             boxShadow: [
               BoxShadow(
                 color: Color(0xFF92B7F7),

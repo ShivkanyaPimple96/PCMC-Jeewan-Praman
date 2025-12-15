@@ -39,7 +39,7 @@ class ResponseKYCScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    success ? 'Success' : 'Error',
+                    success ? 'Success' : 'Note',
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.bold),
                   ),

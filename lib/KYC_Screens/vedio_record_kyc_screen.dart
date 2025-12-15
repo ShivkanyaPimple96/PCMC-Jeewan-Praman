@@ -1,41 +1,31 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show min, pi;
+import 'dart:math';
 
 import 'package:camera/camera.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pcmc_jeevan_praman/KYC_Screens/recorded_video_kyc_screen.dart';
+import 'package:pcmc_jeevan_praman/kyc_screens/recorded_video_kyc_screen.dart';
 
 class VideoRecordKYCScreen extends StatefulWidget {
-  // Constructor to receive necessary user and location details
-  // final String imagePath;
   final String aadhaarNumber;
-  // final String latitude;
-  // final String longitude;
-  // final String address;
-  // final String frontImagePath;
-  // final String backImagePath;
-  // // final String inputFieldOneValue;
-  // final String? selectedDropdownValue;
+  final String mobileNumber;
+  final String ppoNumber;
+  final String address;
+  final String gender;
   final String lastSubmit;
 
   const VideoRecordKYCScreen({
     super.key,
-    // required this.imagePath,
     required this.aadhaarNumber,
-    // required this.latitude,
-    // required this.longitude,
-    // required this.address,
-    // required this.inputFieldOneValue,
-    // this.selectedDropdownValue,
-    // required this.frontImagePath,
-    // required this.backImagePath,
+    required this.ppoNumber,
     required this.lastSubmit,
+    required this.mobileNumber,
+    required this.address,
+    required this.gender,
   });
 
   @override
@@ -43,28 +33,24 @@ class VideoRecordKYCScreen extends StatefulWidget {
 }
 
 class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
-  // Camera-related variables
   late List<CameraDescription> cameras;
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
 
-  // Recording control variables
   bool isRecording = false;
-  late String videoPath;
+  String videoPath = '';
   bool _isBlinking = false;
   Timer? _blinkTimer;
   Timer? _timer;
   int _elapsedTime = 0;
-  int duration = 6; // Default recording duration: 6 seconds
+  int duration = 6;
   bool isFrontCamera = true;
-
-  // Device type detection
   bool? _isTablet;
+  bool _isInitializing = false;
 
   @override
   void initState() {
     super.initState();
-    // Lock screen orientation to portrait during recording
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -72,48 +58,87 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
     initCamera();
   }
 
-  // Detect if the device is a tablet
   bool isTablet(BuildContext context) {
     if (_isTablet != null) return _isTablet!;
-
     final shortestSide = MediaQuery.of(context).size.shortestSide;
-    _isTablet = shortestSide >= 600; // Standard tablet detection
+    _isTablet = shortestSide >= 600;
     return _isTablet!;
   }
 
-  // Initialize available cameras
   Future<void> initCamera() async {
-    cameras = await availableCameras();
-    setCamera(CameraLensDirection.back); // Start with back camera
-  }
-
-  // Set camera based on lens direction
-  Future<void> setCamera(CameraLensDirection direction) async {
-    final selectedCamera =
-        cameras.firstWhere((camera) => camera.lensDirection == direction);
-
-    _controller = CameraController(
-      selectedCamera,
-      ResolutionPreset.low,
-      enableAudio: false, // No audio needed
-    );
-    _initializeControllerFuture = _controller!.initialize();
-    setState(() {});
-  }
-
-  // Toggle between front and back camera
-  Future<void> switchCamera() async {
-    if (isFrontCamera) {
-      await setCamera(CameraLensDirection.back);
-    } else {
+    try {
+      cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        _showErrorToast("No cameras available");
+        return;
+      }
       await setCamera(CameraLensDirection.front);
+    } catch (e) {
+      print('Error initializing camera: $e');
+      _showErrorToast("Failed to initialize camera");
     }
-    isFrontCamera = !isFrontCamera;
+  }
+
+  Future<void> setCamera(CameraLensDirection direction) async {
+    if (_isInitializing) return;
+
+    try {
+      _isInitializing = true;
+
+      // Dispose previous controller
+      if (_controller != null) {
+        await _controller!.dispose();
+        _controller = null;
+      }
+
+      final selectedCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == direction,
+        orElse: () => cameras.first,
+      );
+
+      _controller = CameraController(
+        selectedCamera,
+        ResolutionPreset
+            .medium, // Changed from low to medium for better compatibility
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.yuv420, // Better compatibility
+      );
+
+      _initializeControllerFuture = _controller!.initialize();
+      await _initializeControllerFuture;
+
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    } catch (e) {
+      print('Error setting camera: $e');
+      _isInitializing = false;
+      if (mounted) {
+        _showErrorToast("Camera setup failed");
+      }
+    }
+  }
+
+  Future<void> switchCamera() async {
+    if (_isInitializing || isRecording) return;
+
+    try {
+      if (isFrontCamera) {
+        await setCamera(CameraLensDirection.back);
+      } else {
+        await setCamera(CameraLensDirection.front);
+      }
+      isFrontCamera = !isFrontCamera;
+    } catch (e) {
+      print('Error switching camera: $e');
+      _showErrorToast("Failed to switch camera");
+    }
   }
 
   @override
   void dispose() {
-    // Reset screen orientation and clean up timers/controllers
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _controller?.dispose();
     _blinkTimer?.cancel();
@@ -121,19 +146,15 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
     super.dispose();
   }
 
-  // Start recording video
   Future<void> startVideoRecording() async {
     if (_controller == null || !_controller!.value.isInitialized) {
-      Fluttertoast.showToast(
-        msg: "Camera not initialized",
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      _showErrorToast("Camera not initialized");
       return;
     }
 
+    if (isRecording) return;
+
     try {
-      // Prepare storage path
       final Directory extDir = await getApplicationDocumentsDirectory();
       final String dirPath = '${extDir.path}/Videos';
       await Directory(dirPath).create(recursive: true);
@@ -141,25 +162,42 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
       final String filePath =
           '$dirPath/${DateTime.now().millisecondsSinceEpoch}.mp4';
 
-      // Start recording
       await _controller!.startVideoRecording();
+
       setState(() {
         isRecording = true;
         videoPath = filePath;
         _elapsedTime = 0;
       });
 
-      _startBlinking(); // Red blinking indicator
-      _startTimer(); // Show recording time counter
+      _startBlinking();
+      _startTimer();
 
-      // Wait until desired duration completes
+      // Wait for duration
       await Future.delayed(Duration(seconds: duration));
 
-      // Stop recording and save file
+      // Check if still recording (user might have left screen)
+      if (!isRecording || _controller == null) return;
+
       final XFile videoFile = await _controller!.stopVideoRecording();
       final File recordedFile = File(videoFile.path);
-      await recordedFile.copy(filePath); // Save video
-      await recordedFile.delete(); // Remove temporary file
+
+      // Verify file exists and has content
+      if (!await recordedFile.exists()) {
+        throw Exception("Video file was not created");
+      }
+
+      final fileSize = await recordedFile.length();
+      if (fileSize == 0) {
+        throw Exception("Video file is empty");
+      }
+
+      await recordedFile.copy(filePath);
+
+      // Only delete if copy was successful
+      if (await File(filePath).exists()) {
+        await recordedFile.delete();
+      }
 
       setState(() {
         isRecording = false;
@@ -169,103 +207,85 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
       _stopBlinking();
       _timer?.cancel();
 
-      Fluttertoast.showToast(
-        msg: "Video Recorded!",
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-      );
+      _showSuccessToast("Video Recorded!");
 
-      // Navigate to video preview screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoPlayerKYCScreen(
-            // latitude: widget.latitude,
-            // longitude: widget.longitude,
-            // address: widget.address,
-            videoPath: videoPath,
-            recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-            recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-            // imagePath: widget.imagePath,
-            aadhaarNumber: widget.aadhaarNumber,
-            isFrontCamera: isFrontCamera,
-            // frontImagePath: widget.frontImagePath, // Pass front image path
-            // backImagePath: widget.backImagePath, // Pass back image path
-            // // inputFieldOneValue: widget.inputFieldOneValue,
-            // selectedDropdownValue: widget.selectedDropdownValue,
-            lastSubmit: "",
+      // Small delay before navigation
+      await Future.delayed(Duration(milliseconds: 300));
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerKYCScreen(
+              mobileNumber: widget.mobileNumber,
+              videoPath: videoPath,
+              recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+              recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
+              aadhaarNumber: widget.aadhaarNumber,
+              ppoNumber: widget.ppoNumber,
+              isFrontCamera: isFrontCamera,
+              gender: widget.gender,
+              address: widget.address,
+              lastSubmit: "",
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
       print('Error recording video: $e');
 
-      if (isRecording) {
+      if (isRecording && _controller != null) {
         try {
           await _controller!.stopVideoRecording();
         } catch (stopError) {
           print('Error stopping video after failure: $stopError');
         }
-
-        setState(() {
-          isRecording = false;
-        });
-
-        _stopBlinking();
-        _timer?.cancel();
-
-        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-
-        Fluttertoast.showToast(
-          msg:
-              "Recording failed: ${e.toString().substring(0, min(50, e.toString().length))}",
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
       }
-    }
-  }
 
-  // Stop recording manually (not used in auto recording flow)
-  Future<void> stopVideoRecording() async {
-    if (_controller == null || !_controller!.value.isRecordingVideo) return;
-
-    try {
-      final XFile videoFile = await _controller!.stopVideoRecording();
       setState(() {
         isRecording = false;
-        videoPath = videoFile.path;
       });
 
       _stopBlinking();
       _timer?.cancel();
-    } catch (e) {
-      print('Error stopping video recording: $e');
+
+      String errorMsg = "Recording failed";
+      if (e.toString().contains('Camera')) {
+        errorMsg = "Camera error occurred";
+      } else if (e.toString().contains('permission')) {
+        errorMsg = "Camera permission denied";
+      }
+
+      _showErrorToast(errorMsg);
     }
   }
 
-  // Red blinking indicator for recording
   void _startBlinking() {
     _blinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      setState(() {
-        _isBlinking = !_isBlinking;
-      });
+      if (mounted) {
+        setState(() {
+          _isBlinking = !_isBlinking;
+        });
+      }
     });
   }
 
   void _stopBlinking() {
     _blinkTimer?.cancel();
-    setState(() {
-      _isBlinking = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isBlinking = false;
+      });
+    }
   }
 
-  // Timer to track elapsed recording time
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _elapsedTime++;
-      });
+      if (mounted) {
+        setState(() {
+          _elapsedTime++;
+        });
+      }
 
       if (_elapsedTime >= duration) {
         _timer?.cancel();
@@ -273,56 +293,281 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
     });
   }
 
-  // Widget to display camera preview properly with tablet rotation
+  void _showErrorToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      toastLength: Toast.LENGTH_LONG,
+    );
+  }
+
+  void _showSuccessToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // Widget _buildCameraPreview() {
+  //   if (_controller == null || !_controller!.value.isInitialized) {
+  //     return const Center(child: CircularProgressIndicator());
+  //   }
+
+  //   final preview = CameraPreview(_controller!);
+  //   final previewSize = _controller!.value.previewSize!;
+  //   final cameraAspectRatio = previewSize.height / previewSize.width;
+
+  //   final isFrontCamera =
+  //       _controller!.description.lensDirection == CameraLensDirection.front;
+  //   final isBackCamera =
+  //       _controller!.description.lensDirection == CameraLensDirection.back;
+
+  //   double rotationAngle = 0;
+  //   if (isFrontCamera) {
+  //     rotationAngle = pi / 2 + pi;
+  //   } else if (isBackCamera) {
+  //     rotationAngle = pi / 2;
+  //   }
+
+  //   final size = MediaQuery.of(context).size;
+  //   final width = size.width;
+  //   final height = size.height;
+
+  //   return Padding(
+  //     padding: const EdgeInsets.all(8.0),
+  //     child: ClipRRect(
+  //       borderRadius: BorderRadius.circular(20),
+  //       child: SizedBox(
+  //         height: 700,
+  //         width: 700,
+  //         child: Stack(
+  //           children: [
+  //             Transform.rotate(
+  //               angle: rotationAngle,
+  //               child: AspectRatio(
+  //                 aspectRatio: 1 / cameraAspectRatio,
+  //                 child: SizedBox(
+  //                   width: 500,
+  //                   height: 350,
+  //                   child: preview,
+  //                 ),
+  //                 // child: preview,
+  //               ),
+  //             ),
+  //             if (!isRecording)
+  //               Positioned(
+  //                 top: height * 0.020,
+  //                 left: width * 0.17,
+  //                 right: width * 0.025,
+  //                 child: Text(
+  //                   'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
+  //                   style: TextStyle(
+  //                     fontSize: width * 0.030,
+  //                     color: Colors.white,
+  //                     fontWeight: FontWeight.bold,
+  //                     shadows: [
+  //                       Shadow(
+  //                         offset: Offset(1, 1),
+  //                         blurRadius: 3,
+  //                         color: Colors.black54,
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   textAlign: TextAlign.left,
+  //                 ),
+  //               ),
+  //             if (isRecording)
+  //               Positioned(
+  //                 right: width * 0.2,
+  //                 top: height * 0.012,
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.end,
+  //                   children: [
+  //                     Text(
+  //                       'Recording... ${_elapsedTime}s',
+  //                       style: TextStyle(
+  //                         fontSize: width * 0.035,
+  //                         color: Colors.red,
+  //                         fontWeight: FontWeight.bold,
+  //                         // shadows: [
+  //                         //   Shadow(
+  //                         //     offset: Offset(1, 1),
+  //                         //     blurRadius: 3,
+  //                         //     color: Colors.black87,
+  //                         //   ),
+  //                         // ],
+  //                       ),
+  //                     ),
+  //                     SizedBox(height: height * 0.012),
+  //                     Icon(
+  //                       Icons.radio_button_checked,
+  //                       color: _isBlinking ? Colors.red : Colors.transparent,
+  //                       size: width * 0.125,
+  //                     ),
+  //                     // Text(
+  //                     //   'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+  //                     //   style: TextStyle(
+  //                     //     fontSize: width * 0.04,
+  //                     //     color: Colors.white,
+  //                     //     shadows: [
+  //                     //       Shadow(
+  //                     //         offset: Offset(1, 1),
+  //                     //         blurRadius: 3,
+  //                     //         color: Colors.black87,
+  //                     //       ),
+  //                     //     ],
+  //                     //   ),
+  //                     // ),
+  //                     // Text(
+  //                     //   'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
+  //                     //   style: TextStyle(
+  //                     //     fontSize: width * 0.04,
+  //                     //     color: Colors.white,
+  //                     //     shadows: [
+  //                     //       Shadow(
+  //                     //         offset: Offset(1, 1),
+  //                     //         blurRadius: 3,
+  //                     //         color: Colors.black87,
+  //                     //       ),
+  //                     //     ],
+  //                     //   ),
+  //                     // ),
+  //                   ],
+  //                 ),
+  //               ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildCameraPreview() {
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final bool deviceIsTablet = isTablet(context);
     final preview = CameraPreview(_controller!);
-    final previewSize = _controller!.value.previewSize!;
-    final cameraAspectRatio = previewSize.height / previewSize.width;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
 
-    Widget previewWidget;
+    // Calculate responsive dimensions
+    // Using 90% of screen width with max constraint
+    final containerWidth = min(width * 0.9, 350.0);
+    // Maintain aspect ratio for height
+    final containerHeight = containerWidth * 1.1;
 
-    if (deviceIsTablet) {
-      // For tablets - rotate 90 degrees to the left (-pi/2 radians)
-      previewWidget = Transform.rotate(
-        angle: pi + pi, // -90 degrees (rotate left)
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: AspectRatio(
-            aspectRatio:
-                1 / cameraAspectRatio, // Inverse ratio for 90 degree rotation
-            child: preview,
-          ),
+    // Calculate preview dimensions based on container
+    final previewWidth = containerHeight * 1.1;
+    final previewHeight = containerWidth;
+
+    // Set rotation angle based on camera type
+    double rotationAngle = isFrontCamera ? -pi / 2 : pi / 2;
+
+    return Container(
+      height: containerHeight,
+      width: containerWidth,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Color(0xFF92B7F7),
+          width: 2.0,
         ),
-      );
-    } else {
-      // For phones - keep the original aspect ratio
-      previewWidget = AspectRatio(
-        aspectRatio: cameraAspectRatio,
-        child: preview,
-      );
-    }
-
-    return Center(child: previewWidget);
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: Transform.rotate(
+                angle: rotationAngle,
+                child: SizedBox(
+                  width: width * 1.1,
+                  height: height * 0.35,
+                  child: preview,
+                ),
+              ),
+            ),
+            if (!isRecording)
+              Positioned(
+                top: height * 0.020,
+                left: width * 0.15,
+                right: width * 0.025,
+                child: Text(
+                  'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
+                  style: TextStyle(
+                    fontSize: width * 0.035,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.left,
+                ),
+              ),
+            if (isRecording)
+              Positioned(
+                right: width * 0.05,
+                top: height * 0.015,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Recording... ${_elapsedTime}s',
+                      style: TextStyle(
+                        fontSize: width * 0.045,
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: height * 0.012),
+                    Icon(
+                      Icons.radio_button_checked,
+                      color: _isBlinking ? Colors.red : Colors.transparent,
+                      size: width * 0.125,
+                    ),
+                    Text(
+                      'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+                      style: TextStyle(
+                        fontSize: width * 0.04,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
+                      style: TextStyle(
+                        fontSize: width * 0.04,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Center(
+          title: Center(
             child: Text(
               ' Upload Video [Step-5]',
               style: TextStyle(
                 color: Colors.black,
-                fontSize: 18,
+                fontSize: width * 0.045,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -335,16 +580,38 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
                 future: _initializeControllerFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline,
+                                size: 60, color: Colors.red),
+                            SizedBox(height: 20),
+                            Text(
+                              'Camera initialization failed',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: initCamera,
+                              child: Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 20),
-                          const Center(
+                          SizedBox(height: height * 0.025),
+                          Center(
                             child: Text(
-                              'Click Divyang Video',
+                              'Click Pensioner Video',
                               style: TextStyle(
-                                fontSize: 24,
+                                fontSize: width * 0.06,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                                 letterSpacing: 1.5,
@@ -352,137 +619,76 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          const Center(
+                          Center(
                             child: Text(
-                              'दिव्यांग व्यक्तीचा व्हिडिओ काढा',
+                              'पेंशनधारक व्यक्तीचा व्हिडिओ काढा',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: width * 0.045,
                                 color: Colors.black54,
                               ),
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                left: 20,
-                                right: 20,
-                                top: 30,
-                              ),
-                              child: Stack(
-                                children: [
-                                  _buildCameraPreview(),
-                                  if (!isRecording)
-                                    const Positioned(
-                                      top: 22,
-                                      left: 40.0,
-                                      right: 10.0,
-                                      child: Text(
-                                        'Make sure your face is clearly visible\nDo not look left or right\nPlease look front of the camera',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.left,
-                                      ),
-                                    ),
-                                  if (isRecording)
-                                    Positioned(
-                                      right: 40.0,
-                                      top: 10.0,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            'Recording... ${_elapsedTime}s',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Icon(
-                                            Icons.radio_button_checked,
-                                            color: _isBlinking
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            size: 50,
-                                          ),
-                                          Text(
-                                            'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.02,
+                              right: width * 0.02,
+                              top: height * 0.030,
                             ),
+                            child: _buildCameraPreview(),
                           ),
-                          const SizedBox(height: 10),
-                          // Recording and switch camera buttons
+                          SizedBox(height: height * 0.012),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               ElevatedButton.icon(
-                                onPressed: isRecording
+                                onPressed: (isRecording || _isInitializing)
                                     ? null
-                                    : () async {
-                                        await startVideoRecording();
-                                      },
-                                icon: const Icon(
+                                    : startVideoRecording,
+                                icon: Icon(
                                   Icons.videocam,
-                                  color: Colors.white,
+                                  color: Colors.black,
+                                  size: width * 0.05,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   'Start Recording\nव्हिडिओ रेकॉर्ड करा',
                                   textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: width * 0.04),
                                 ),
                                 style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF92B7F7),
                                   foregroundColor: Colors.black,
-                                  backgroundColor: Color(0xFF92B7F7),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 30, vertical: 10),
-                                  textStyle: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.1,
+                                    vertical: height * 0.012,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 20),
+                              SizedBox(width: width * 0.05),
                               Column(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(
+                                    icon: Icon(
                                       Icons.switch_camera_sharp,
-                                      color: Color(0xFF92B7F7),
-                                      size: 40,
+                                      color: const Color(0xFF92B7F7),
+                                      size: width * 0.1,
                                     ),
-                                    onPressed:
-                                        isRecording ? null : switchCamera,
+                                    onPressed: (isRecording || _isInitializing)
+                                        ? null
+                                        : switchCamera,
                                   ),
-                                  const Text("कॅमेरा बदला"),
+                                  Text(
+                                    "कॅमेरा बदला",
+                                    style: TextStyle(fontSize: width * 0.035),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 40),
+                          SizedBox(height: height * 0.05),
                         ],
                       ),
                     );
@@ -505,23 +711,26 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 // import 'package:flutter/services.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:intl/intl.dart';
+
 // import 'package:path_provider/path_provider.dart';
-// import 'package:pcmc_jeevan_praman/KYC_Screens/recorded_video_kyc_screen.dart';
+// import 'package:pcmc_jeevan_praman/kyc_screens/recorded_video_kyc_screen.dart';
 
 // class VideoRecordKYCScreen extends StatefulWidget {
-//   final String imagePath;
 //   final String aadhaarNumber;
-//   final String latitude;
-//   final String longitude;
+//   final String mobileNumber;
+//   final String ppoNumber;
 //   final String address;
+//   final String gender;
+//   final String lastSubmit;
 
 //   const VideoRecordKYCScreen({
 //     super.key,
-//     required this.imagePath,
 //     required this.aadhaarNumber,
-//     required this.latitude,
-//     required this.longitude,
+//     required this.ppoNumber,
+//     required this.lastSubmit,
+//     required this.mobileNumber,
 //     required this.address,
+//     required this.gender,
 //   });
 
 //   @override
@@ -569,7 +778,7 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //   // Initialize available cameras
 //   Future<void> initCamera() async {
 //     cameras = await availableCameras();
-//     setCamera(CameraLensDirection.back); // Start with back camera
+//     setCamera(CameraLensDirection.front); // Start with front camera
 //   }
 
 //   // Set camera based on lens direction
@@ -665,17 +874,16 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //         context,
 //         MaterialPageRoute(
 //           builder: (context) => VideoPlayerKYCScreen(
-//             latitude: widget.latitude,
-//             longitude: widget.longitude,
-//             address: widget.address,
+//             mobileNumber: widget.mobileNumber,
 //             videoPath: videoPath,
 //             recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
 //             recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-//             imagePath: widget.imagePath,
 //             aadhaarNumber: widget.aadhaarNumber,
+//             ppoNumber: widget.ppoNumber,
 //             isFrontCamera: isFrontCamera,
-//             // inputFieldOneValue: widget.inputFieldOneValue,
-//             // selectedDropdownValue: widget.selectedDropdownValue,
+//             gender: widget.gender,
+//             address: widget.address,
+//             lastSubmit: "",
 //           ),
 //         ),
 //       );
@@ -772,77 +980,140 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //     // Set rotation angle based on camera type
 //     double rotationAngle = 0;
 //     if (isFrontCamera) {
-//       rotationAngle = -pi / 2; // 90° left
+//       rotationAngle = pi / 2 + pi; // Rotate 90° + 180° = 270° total (or -90°)
 //     } else if (isBackCamera) {
-//       rotationAngle = pi / 2; // 90° right
+//       rotationAngle = pi / 2; // Rotate 90° clockwise (right)
 //     }
+
+//     // Get screen dimensions for overlay positioning
+//     final size = MediaQuery.of(context).size;
+//     final width = size.width;
+//     final height = size.height;
 
 //     return Padding(
 //       padding: const EdgeInsets.all(8.0),
-//       child: Container(
-//         height: 350,
-//         width: 650,
-//         child: Transform.rotate(
-//           angle: rotationAngle,
-//           child: AspectRatio(
-//             aspectRatio: cameraAspectRatio, // Invert ratio after rotation
-//             child: preview,
+//       child: ClipRRect(
+//         borderRadius: BorderRadius.circular(20),
+//         child: SizedBox(
+//           height: 700,
+//           width: 650,
+//           child: Stack(
+//             children: [
+//               // Camera Preview
+//               Transform.rotate(
+//                 angle: rotationAngle,
+//                 child: AspectRatio(
+//                   aspectRatio: 1 / cameraAspectRatio,
+//                   child: preview,
+//                 ),
+//               ),
+
+//               // Overlay UI Elements
+//               if (!isRecording)
+//                 Positioned(
+//                   top: height * 0.027,
+//                   left: width * 0.15,
+//                   right: width * 0.025,
+//                   child: Text(
+//                     'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
+//                     style: TextStyle(
+//                       fontSize: width * 0.035,
+//                       color: Colors.white,
+//                       fontWeight: FontWeight.bold,
+//                       shadows: [
+//                         Shadow(
+//                           offset: Offset(1, 1),
+//                           blurRadius: 3,
+//                           color: Colors.black54,
+//                         ),
+//                       ],
+//                     ),
+//                     textAlign: TextAlign.left,
+//                   ),
+//                 ),
+
+//               if (isRecording)
+//                 Positioned(
+//                   right: width * 0.1,
+//                   top: height * 0.012,
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.end,
+//                     children: [
+//                       Text(
+//                         'Recording... ${_elapsedTime}s',
+//                         style: TextStyle(
+//                           fontSize: width * 0.045,
+//                           color: Colors.red,
+//                           fontWeight: FontWeight.bold,
+//                           shadows: [
+//                             Shadow(
+//                               offset: Offset(1, 1),
+//                               blurRadius: 3,
+//                               color: Colors.black87,
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                       SizedBox(height: height * 0.012),
+//                       Icon(
+//                         Icons.radio_button_checked,
+//                         color: _isBlinking ? Colors.red : Colors.transparent,
+//                         size: width * 0.125,
+//                       ),
+//                       Text(
+//                         'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+//                         style: TextStyle(
+//                           fontSize: width * 0.04,
+//                           color: Colors.white,
+//                           shadows: [
+//                             Shadow(
+//                               offset: Offset(1, 1),
+//                               blurRadius: 3,
+//                               color: Colors.black87,
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                       Text(
+//                         'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
+//                         style: TextStyle(
+//                           fontSize: width * 0.04,
+//                           color: Colors.white,
+//                           shadows: [
+//                             Shadow(
+//                               offset: Offset(1, 1),
+//                               blurRadius: 3,
+//                               color: Colors.black87,
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//             ],
 //           ),
 //         ),
 //       ),
 //     );
 //   }
 
-//   // Widget to display camera preview properly with tablet rotation
-//   // Widget _buildCameraPreview() {
-//   //   if (_controller == null || !_controller!.value.isInitialized) {
-//   //     return const Center(child: CircularProgressIndicator());
-//   //   }
-
-//   //   final bool deviceIsTablet = isTablet(context);
-//   //   final preview = CameraPreview(_controller!);
-//   //   final previewSize = _controller!.value.previewSize!;
-//   //   final cameraAspectRatio = previewSize.height / previewSize.width;
-
-//   //   Widget previewWidget;
-
-//   //   if (deviceIsTablet) {
-//   //     // For tablets - rotate 90 degrees to the left (-pi/2 radians)
-//   //     previewWidget = Transform.rotate(
-//   //       angle: pi + pi, // -90 degrees (rotate left)
-//   //       child: SizedBox(
-//   //         width: MediaQuery.of(context).size.width,
-//   //         height: MediaQuery.of(context).size.height,
-//   //         child: AspectRatio(
-//   //           aspectRatio:
-//   //               1 / cameraAspectRatio, // Inverse ratio for 90 degree rotation
-//   //           child: preview,
-//   //         ),
-//   //       ),
-//   //     );
-//   //   } else {
-//   //     // For phones - keep the original aspect ratio
-//   //     previewWidget = AspectRatio(
-//   //       aspectRatio: cameraAspectRatio,
-//   //       child: preview,
-//   //     );
-//   //   }
-
-//   //   return Center(child: previewWidget);
-//   // }
-
 //   @override
 //   Widget build(BuildContext context) {
+//     final size = MediaQuery.of(context).size;
+//     final width = size.width;
+//     final height = size.height;
+
 //     return SafeArea(
 //       child: Scaffold(
 //         backgroundColor: Colors.white,
 //         appBar: AppBar(
-//           title: const Center(
+//           title: Center(
 //             child: Text(
 //               ' Upload Video [Step-5]',
 //               style: TextStyle(
 //                 color: Colors.black,
-//                 fontSize: 18,
+//                 fontSize: width * 0.045,
 //                 fontWeight: FontWeight.bold,
 //               ),
 //             ),
@@ -859,12 +1130,12 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //                       child: Column(
 //                         mainAxisAlignment: MainAxisAlignment.center,
 //                         children: [
-//                           const SizedBox(height: 20),
-//                           const Center(
+//                           SizedBox(height: height * 0.025),
+//                           Center(
 //                             child: Text(
-//                               'Click Divyang Video',
+//                               'Click Pensioner Video',
 //                               style: TextStyle(
-//                                 fontSize: 24,
+//                                 fontSize: width * 0.06,
 //                                 fontWeight: FontWeight.bold,
 //                                 color: Colors.black87,
 //                                 letterSpacing: 1.5,
@@ -872,11 +1143,11 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //                               textAlign: TextAlign.center,
 //                             ),
 //                           ),
-//                           const Center(
+//                           Center(
 //                             child: Text(
-//                               'दिव्यांग व्यक्तीचा व्हिडिओ काढा',
+//                               'पेंशनधारक व्यक्तीचा व्हिडिओ काढा',
 //                               style: TextStyle(
-//                                 fontSize: 18,
+//                                 fontSize: width * 0.045,
 //                                 color: Colors.black54,
 //                               ),
 //                               textAlign: TextAlign.center,
@@ -884,75 +1155,15 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //                           ),
 //                           Expanded(
 //                             child: Padding(
-//                               padding: const EdgeInsets.only(
-//                                 left: 20,
-//                                 right: 20,
-//                                 top: 30,
+//                               padding: EdgeInsets.only(
+//                                 left: width * 0.02,
+//                                 right: width * 0.02,
+//                                 top: height * 0.030,
 //                               ),
-//                               child: Stack(
-//                                 children: [
-//                                   _buildCameraPreview(),
-//                                   if (!isRecording)
-//                                     const Positioned(
-//                                       top: 22,
-//                                       left: 40.0,
-//                                       right: 10.0,
-//                                       child: Text(
-//                                         'Make sure your face is clearly visible\nDo not look left or right\nPlease look front of the camera',
-//                                         style: TextStyle(
-//                                           fontSize: 16,
-//                                           color: Colors.white,
-//                                           fontWeight: FontWeight.bold,
-//                                         ),
-//                                         textAlign: TextAlign.left,
-//                                       ),
-//                                     ),
-//                                   if (isRecording)
-//                                     Positioned(
-//                                       right: 40.0,
-//                                       top: 10.0,
-//                                       child: Column(
-//                                         crossAxisAlignment:
-//                                             CrossAxisAlignment.end,
-//                                         children: [
-//                                           Text(
-//                                             'Recording... ${_elapsedTime}s',
-//                                             style: const TextStyle(
-//                                               fontSize: 18,
-//                                               color: Colors.red,
-//                                               fontWeight: FontWeight.bold,
-//                                             ),
-//                                           ),
-//                                           const SizedBox(height: 10),
-//                                           Icon(
-//                                             Icons.radio_button_checked,
-//                                             color: _isBlinking
-//                                                 ? Colors.red
-//                                                 : Colors.transparent,
-//                                             size: 50,
-//                                           ),
-//                                           Text(
-//                                             'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-//                                             style: const TextStyle(
-//                                               fontSize: 16,
-//                                               color: Colors.white,
-//                                             ),
-//                                           ),
-//                                           Text(
-//                                             'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
-//                                             style: const TextStyle(
-//                                               fontSize: 16,
-//                                               color: Colors.white,
-//                                             ),
-//                                           ),
-//                                         ],
-//                                       ),
-//                                     ),
-//                                 ],
-//                               ),
+//                               child: _buildCameraPreview(),
 //                             ),
 //                           ),
-//                           const SizedBox(height: 10),
+//                           SizedBox(height: height * 0.012),
 //                           // Recording and switch camera buttons
 //                           Row(
 //                             mainAxisAlignment: MainAxisAlignment.center,
@@ -963,433 +1174,49 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 //                                     : () async {
 //                                         await startVideoRecording();
 //                                       },
-//                                 icon: const Icon(
+//                                 icon: Icon(
 //                                   Icons.videocam,
-//                                   color: Colors.white,
-//                                 ),
-//                                 label: const Text(
-//                                   'Start Recording\nव्हिडिओ रेकॉर्ड करा',
-//                                   textAlign: TextAlign.center,
-//                                 ),
-//                                 style: ElevatedButton.styleFrom(
-//                                   foregroundColor: Colors.white,
-//                                   backgroundColor: Colors.green,
-//                                   padding: const EdgeInsets.symmetric(
-//                                       horizontal: 30, vertical: 10),
-//                                   textStyle: const TextStyle(
-//                                     fontSize: 18,
-//                                     fontWeight: FontWeight.bold,
-//                                   ),
-//                                   shape: RoundedRectangleBorder(
-//                                     borderRadius: BorderRadius.circular(20),
-//                                   ),
-//                                 ),
-//                               ),
-//                               const SizedBox(width: 20),
-//                               Column(
-//                                 children: [
-//                                   IconButton(
-//                                     icon: const Icon(
-//                                       Icons.switch_camera_sharp,
-//                                       color: Colors.green,
-//                                       size: 40,
-//                                     ),
-//                                     onPressed:
-//                                         isRecording ? null : switchCamera,
-//                                   ),
-//                                   const Text("कॅमेरा बदला"),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                           const SizedBox(height: 40),
-//                         ],
-//                       ),
-//                     );
-//                   } else {
-//                     return const Center(child: CircularProgressIndicator());
-//                   }
-//                 },
-//               ),
-//       ),
-//     );
-//   }
-// }
-
-// import 'dart:async';
-// import 'dart:io';
-
-// import 'package:camera/camera.dart';
-// import 'package:divyank_pmc/DivyangPMC/recorded_video_screen.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:fluttertoast/fluttertoast.dart';
-// import 'package:intl/intl.dart';
-// import 'package:path_provider/path_provider.dart';
-
-// class VideoRecordScreen extends StatefulWidget {
-//   final String imagePath;
-//   final String aadhaarNumber;
-//   final String latitude;
-//   final String longitude;
-//   final String address;
-//   final String inputFieldOneValue;
-//   final String? selectedDropdownValue;
-
-//   const VideoRecordScreen({
-//     super.key,
-//     required this.imagePath,
-//     required this.aadhaarNumber,
-//     required this.latitude,
-//     required this.longitude,
-//     required this.address,
-//     required this.inputFieldOneValue,
-//     this.selectedDropdownValue,
-//   });
-
-//   @override
-//   _VideoRecordScreenState createState() => _VideoRecordScreenState();
-// }
-
-// class _VideoRecordScreenState extends State<VideoRecordScreen> {
-//   late List<CameraDescription> cameras;
-//   CameraController? _controller;
-//   Future<void>? _initializeControllerFuture;
-//   bool isRecording = false;
-//   String? videoPath;
-// // Variable to hold the current date and time
-//   bool _isBlinking = false;
-//   Timer? _blinkTimer;
-//   int duration = 6; // Video duration in seconds
-//   Timer? _timer;
-//   int _elapsedTime = 0;
-//   bool isFrontCamera = true; // Track the current camera
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     initCamera();
-//   }
-
-//   Future<void> initCamera() async {
-//     cameras = await availableCameras();
-//     // Initialize with the front camera first
-//     setCamera(CameraLensDirection.front);
-//   }
-
-//   Future<void> setCamera(CameraLensDirection direction) async {
-//     final selectedCamera =
-//         cameras.firstWhere((camera) => camera.lensDirection == direction);
-
-//     _controller = CameraController(selectedCamera, ResolutionPreset.high);
-//     _initializeControllerFuture = _controller!.initialize();
-//     setState(() {});
-//   }
-
-//   Future<void> switchCamera() async {
-//     if (isFrontCamera) {
-//       setCamera(CameraLensDirection.back);
-//     } else {
-//       setCamera(CameraLensDirection.front);
-//     }
-//     isFrontCamera = !isFrontCamera;
-//   }
-
-//   @override
-//   void dispose() {
-//     _controller?.dispose();
-//     _blinkTimer?.cancel();
-//     _timer?.cancel();
-//     super.dispose();
-//   }
-
-//   Future<void> startVideoRecording() async {
-//     if (_controller == null || !_controller!.value.isInitialized) return;
-
-//     try {
-//       final Orientation orientation = MediaQuery.of(context).orientation;
-//       SystemChrome.setPreferredOrientations([
-//         orientation == Orientation.portrait
-//             ? DeviceOrientation.portraitUp
-//             : DeviceOrientation.landscapeRight,
-//       ]);
-
-//       final Directory extDir = await getApplicationDocumentsDirectory();
-//       final String dirPath = '${extDir.path}/Videos';
-//       await Directory(dirPath).create(recursive: true);
-
-//       // Ensure the file ends with .mp4
-//       final String filePath =
-//           '$dirPath/${DateTime.now().millisecondsSinceEpoch}.mp4';
-
-//       await _controller!.startVideoRecording();
-//       setState(() {
-//         isRecording = true;
-//         videoPath = filePath.endsWith('.mp4')
-//             ? filePath
-//             : '$filePath.mp4'; // Ensure .mp4 extension
-//         _elapsedTime = 0; // Reset the timer
-//       });
-
-//       _startBlinking();
-//       _startTimer();
-
-//       await Future.delayed(Duration(seconds: duration));
-//       await stopVideoRecording();
-
-//       SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-
-//       Fluttertoast.showToast(
-//         msg: "Video Recorded!",
-//         backgroundColor: Colors.green,
-//         textColor: Colors.white,
-//       );
-
-//       Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//           builder: (context) => VideoPlayerScreen(
-//             latitude: widget.latitude, // Pass latitude to the navigated screen
-//             longitude:
-//                 widget.longitude, // Pass longitude to the navigated screen
-//             address: widget.address,
-//             videoPath: videoPath!,
-//             recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-//             recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-//             imagePath: widget.imagePath,
-//             aadhaarNumber: widget.aadhaarNumber,
-//             isFrontCamera: isFrontCamera,
-//             inputFieldOneValue: widget.inputFieldOneValue,
-//             selectedDropdownValue:
-//                 widget.selectedDropdownValue, // Pass the camera information
-//           ),
-//         ),
-//       );
-//     } catch (e) {
-//       print('Error recording video: $e');
-//     }
-//   }
-
-//   Future<void> stopVideoRecording() async {
-//     if (_controller == null || !_controller!.value.isRecordingVideo) return;
-
-//     try {
-//       final XFile videoFile = await _controller!.stopVideoRecording();
-//       setState(() {
-//         isRecording = false;
-//         videoPath = videoFile.path;
-//       });
-
-//       _stopBlinking();
-//       _timer?.cancel(); // Stop the timer when recording ends
-//     } catch (e) {
-//       print('Error stopping video recording: $e');
-//     }
-//   }
-
-//   void _startBlinking() {
-//     _blinkTimer = Timer.periodic(Duration(milliseconds: 500), (timer) {
-//       setState(() {
-//         _isBlinking = !_isBlinking;
-//       });
-//     });
-//   }
-
-//   void _stopBlinking() {
-//     _blinkTimer?.cancel();
-//     setState(() {
-//       _isBlinking = false;
-//     });
-//   }
-
-//   void _startTimer() {
-//     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-//       setState(() {
-//         _elapsedTime++;
-//       });
-
-//       if (_elapsedTime >= duration) {
-//         _timer?.cancel();
-//       }
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SafeArea(
-//       child: Scaffold(
-//         backgroundColor: Colors.white,
-//         appBar: AppBar(
-//           title: const Center(
-//             child: Text(
-//               ' Upload Video [Step-5]',
-//               style: TextStyle(
-//                 color: Colors.white, // White text color for contrast
-//                 fontSize: 18, // Font size for the title
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//           ),
-//           backgroundColor: const Color(0xFF551561),
-//         ),
-//         body: _controller == null
-//             ? Center(child: CircularProgressIndicator())
-//             : FutureBuilder<void>(
-//                 future: _initializeControllerFuture,
-//                 builder: (context, snapshot) {
-//                   if (snapshot.connectionState == ConnectionState.done) {
-//                     return Center(
-//                       child: Column(
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         children: [
-//                           // Text("Aadhar Number: ${widget.aadhaarNumber}"),
-
-//                           const SizedBox(
-//                             height: 20,
-//                           ),
-//                           const Center(
-//                             child: Text(
-//                               'Click Divyang Video',
-//                               style: TextStyle(
-//                                 fontSize: 24,
-//                                 fontWeight: FontWeight.bold,
-//                                 color: Colors.black87,
-//                                 letterSpacing: 1.5,
-//                               ),
-//                               textAlign: TextAlign.center,
-//                             ),
-//                           ),
-//                           const Center(
-//                             child: Text(
-//                               'दिव्यांग व्यक्तीचा व्हिडिओ काढा',
-//                               style: TextStyle(
-//                                 fontSize: 18,
-//                                 color: Colors.black54,
-//                               ),
-//                               textAlign: TextAlign.center,
-//                             ),
-//                           ),
-//                           Expanded(
-//                             child: Padding(
-//                               padding: const EdgeInsets.only(
-//                                 left: 20,
-//                                 right: 20,
-//                                 top: 30,
-//                               ),
-//                               child: Stack(
-//                                 children: [
-//                                   CameraPreview(_controller!),
-//                                   if (!isRecording)
-//                                     const Positioned(
-//                                       top: 22,
-//                                       left: 10.0,
-//                                       right: 10.0,
-//                                       child: Text(
-//                                         'Make sure your face is clearly visible\nDo not look left or right\nPlease look front of the camera',
-//                                         style: TextStyle(
-//                                           fontSize: 16,
-//                                           color: Colors.white,
-//                                           fontWeight: FontWeight.bold,
-//                                         ),
-//                                         textAlign: TextAlign.left,
-//                                       ),
-//                                     ),
-//                                   if (isRecording)
-//                                     Positioned(
-//                                       right: 10.0,
-//                                       top: 10.0,
-//                                       child: Column(
-//                                         crossAxisAlignment:
-//                                             CrossAxisAlignment.end,
-//                                         children: [
-//                                           Text(
-//                                             'Recording... ${_elapsedTime}s',
-//                                             style: const TextStyle(
-//                                               fontSize: 18,
-//                                               color: Colors.red,
-//                                               fontWeight: FontWeight.bold,
-//                                             ),
-//                                           ),
-//                                           const SizedBox(height: 10),
-//                                           Icon(
-//                                             Icons.radio_button_checked,
-//                                             color: _isBlinking
-//                                                 ? Colors.red
-//                                                 : Colors.transparent,
-//                                             size: 50,
-//                                           ),
-//                                           Text(
-//                                             'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-//                                             style: const TextStyle(
-//                                               fontSize: 16,
-//                                               color: Colors.white,
-//                                             ),
-//                                           ),
-//                                           Text(
-//                                             'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
-//                                             style: const TextStyle(
-//                                               fontSize: 16,
-//                                               color: Colors.white,
-//                                             ),
-//                                           ),
-//                                         ],
-//                                       ),
-//                                     ),
-//                                 ],
-//                               ),
-//                             ),
-//                           ),
-//                           const SizedBox(height: 10),
-//                           Row(
-//                             mainAxisAlignment: MainAxisAlignment.center,
-//                             children: [
-//                               ElevatedButton.icon(
-//                                 onPressed: isRecording
-//                                     ? null
-//                                     : () async {
-//                                         await startVideoRecording();
-//                                       },
-//                                 icon: const Icon(
-//                                   Icons.videocam,
-//                                   color: Colors.white,
+//                                   color: Colors.black,
+//                                   size: width * 0.05,
 //                                 ),
 //                                 label: Text(
-//                                     'Start Recording\nव्हिडिओ रेकॉर्ड करा'),
+//                                   'Start Recording\nव्हिडिओ रेकॉर्ड करा',
+//                                   textAlign: TextAlign.center,
+//                                   style: TextStyle(fontSize: width * 0.04),
+//                                 ),
 //                                 style: ElevatedButton.styleFrom(
-//                                   foregroundColor: Colors.white, // Text color
-//                                   backgroundColor: const Color(
-//                                       0xFF551561), // Button background color
-//                                   padding: const EdgeInsets.symmetric(
-//                                       horizontal: 30, vertical: 10),
-//                                   textStyle: const TextStyle(
-//                                     fontSize: 18,
-//                                     fontWeight: FontWeight.bold,
-//                                   ),
+//                                   backgroundColor: const Color(0xFF92B7F7),
+//                                   foregroundColor: Colors.black,
 //                                   shape: RoundedRectangleBorder(
-//                                     borderRadius: BorderRadius.circular(
-//                                         10), // Makes it a perfect rectangle
+//                                     borderRadius: BorderRadius.circular(30),
+//                                   ),
+//                                   padding: EdgeInsets.symmetric(
+//                                     horizontal: width * 0.1,
+//                                     vertical: height * 0.012,
 //                                   ),
 //                                 ),
 //                               ),
-//                               const SizedBox(width: 20),
+//                               SizedBox(width: width * 0.05),
 //                               Column(
 //                                 children: [
 //                                   IconButton(
 //                                     icon: Icon(
 //                                       Icons.switch_camera_sharp,
-//                                       color: Color(0xFF551561),
-//                                       size: 40,
+//                                       color: const Color(0xFF92B7F7),
+//                                       size: width * 0.1,
 //                                     ),
-//                                     onPressed: switchCamera,
+//                                     onPressed:
+//                                         isRecording ? null : switchCamera,
 //                                   ),
-//                                   Text("कॅमेरा बदला"),
+//                                   Text(
+//                                     "कॅमेरा बदला",
+//                                     style: TextStyle(fontSize: width * 0.035),
+//                                   ),
 //                                 ],
 //                               ),
 //                             ],
 //                           ),
-//                           const SizedBox(
-//                             height: 40,
-//                           )
+//                           SizedBox(height: height * 0.05),
 //                         ],
 //                       ),
 //                     );

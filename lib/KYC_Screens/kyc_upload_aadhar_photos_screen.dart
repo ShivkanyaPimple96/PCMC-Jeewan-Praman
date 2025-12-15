@@ -7,16 +7,24 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:pcmc_jeevan_praman/KYC_Screens/capture_photo_kyc_screen.dart';
+import 'package:pcmc_jeevan_praman/kyc_screens/photo_click_kyc_screen.dart';
 
 class KycUploadAadharPhotosScreen extends StatefulWidget {
   final String aadhaarNumber;
+  final String mobileNumber;
   final String lastSubmit;
+  final String ppoNumber;
+  final String address;
+  final String gender;
 
   const KycUploadAadharPhotosScreen({
     super.key,
     required this.aadhaarNumber,
     required this.lastSubmit,
+    required this.ppoNumber,
+    required this.mobileNumber,
+    required this.address,
+    required this.gender,
   });
 
   @override
@@ -96,7 +104,7 @@ class _KycUploadAadharPhotosScreenState
             children: [
               Divider(thickness: 2.5),
               Text(
-                'Are you sure you want to submit this Aadhar photos?\nतुम्हाला खात्री आहे की तुम्ही हे आधार फोटो सबमिट करू इच्छिता??',
+                'Are you sure you want to submit this Aadhar photos?\nतुम्हाला खात्री आहे की तुम्ही हे आधार फोटो सबमिट करू इच्छिता?',
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -133,11 +141,13 @@ class _KycUploadAadharPhotosScreenState
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://testsddpmcapi.altwise.in/api/aadhar/TrutiyaPanthi'),
+        Uri.parse(
+            'https://testingpcmcpensioner.altwise.in/api/aadhar/submitKycData'),
       );
 
       // Add Aadhar number to request
       request.fields['AadhaarNumber'] = widget.aadhaarNumber;
+      request.fields['PPONumber'] = widget.ppoNumber;
       request.fields['LastSubmit'] = "";
 
       // Add front and back images
@@ -178,7 +188,11 @@ class _KycUploadAadharPhotosScreenState
           context,
           MaterialPageRoute(
             builder: (context) => PhotoClickKYCScreen(
+              mobileNumber: widget.mobileNumber,
               aadhaarNumber: widget.aadhaarNumber,
+              ppoNumber: widget.ppoNumber,
+              gender: widget.gender,
+              address: widget.address,
               lastSubmit: "",
               // frontImagePath: compressedFront?.path ?? _frontImage!.path,
               // backImagePath: compressedBack?.path ?? _backImage!.path,
@@ -285,7 +299,7 @@ class _KycUploadAadharPhotosScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 103, 161, 198),
+        backgroundColor: const Color(0xFF92B7F7),
         title: Text(
           ' Upload Aadhar Card Photos',
           style: TextStyle(
@@ -353,7 +367,7 @@ class _KycUploadAadharPhotosScreenState
                   style: ElevatedButton.styleFrom(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
-                    backgroundColor: const Color.fromARGB(255, 103, 161, 198),
+                    backgroundColor: const Color(0xFF92B7F7),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -455,459 +469,3 @@ class _KycUploadAadharPhotosScreenState
     );
   }
 }
-
-// import 'package:divyank_pmc/DivyangPMC/capture_photo_screen.dart';
-// import 'package:flutter/material.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'dart:io';
-
-// class UploadAadharPhotos extends StatefulWidget {
-//   final String aadhaarNumber;
-
-//   const UploadAadharPhotos({
-//     super.key,
-//     required this.aadhaarNumber,
-//   });
-
-//   _UploadAadharPhotosState createState() => _UploadAadharPhotosState();
-// }
-
-// class _UploadAadharPhotosState extends State<UploadAadharPhotos> {
-//   File? _frontImage;
-//   File? _backImage;
-//   final ImagePicker _picker = ImagePicker();
-
-//   Future<void> _pickImage(bool isFront) async {
-//     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
-//     if (pickedFile != null) {
-//       setState(() {
-//         if (isFront) {
-//           _frontImage = File(pickedFile.path);
-//         } else {
-//           _backImage = File(pickedFile.path);
-//         }
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       appBar: AppBar(
-//         backgroundColor: const Color(0xFF551561),
-//         title: Text(
-//           ' Upload Aadhar Card Photos',
-//           style: TextStyle(
-//             color: Colors.white,
-//             fontSize: 20,
-//             fontWeight: FontWeight.bold,
-//           ),
-//         ),
-//         centerTitle: true,
-//         elevation: 0,
-//       ),
-//       body: SingleChildScrollView(
-//         padding: EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             Text(
-//               'Click Aadhar Card Front Photo\nआधार कार्डचा समोरील फोटो काढा.',
-//               style: TextStyle(
-//                   fontSize: 18,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black),
-//               textAlign: TextAlign.center,
-//             ),
-//             SizedBox(height: 30),
-
-//             // Front Side Upload
-//             _buildUploadCard(
-//               isFront: true,
-//               image: _frontImage,
-//               onTap: () => _pickImage(true),
-//             ),
-//             SizedBox(height: 30),
-//             Text(
-//               'Click Aadhar Card Back Photo\nआधार कार्डचा मागील फोटो काढा.',
-//               style: TextStyle(
-//                   fontSize: 18,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black),
-//               textAlign: TextAlign.center,
-//             ),
-//             // Back Side Upload
-//             _buildUploadCard(
-//               isFront: false,
-//               image: _backImage,
-//               onTap: () => _pickImage(false),
-//             ),
-//             SizedBox(height: 40),
-
-//             // Submit Button
-//             ElevatedButton(
-//               onPressed: _frontImage != null && _backImage != null
-//                   ? () {
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => PhotoClickScreen(
-//                             aadhaarNumber: widget.aadhaarNumber,
-//                             frontImagePath: _frontImage!.path,
-//                             backImagePath: _backImage!.path,
-//                             // aadhaarNumber: '',
-//                           ),
-//                         ),
-//                       );
-//                     }
-//                   : null,
-//               child: Padding(
-//                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-//                 child: Text(
-//                   'Submit',
-//                   style: TextStyle(fontSize: 20, color: Colors.white),
-//                 ),
-//               ),
-//               style: ElevatedButton.styleFrom(
-//                 padding:
-//                     const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
-//                 backgroundColor: const Color(0xFF551561),
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//                 elevation: 5,
-//                 shadowColor: Colors.teal.withOpacity(0.3),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildUploadCard({
-//     required bool isFront,
-//     required File? image,
-//     required VoidCallback onTap,
-//   }) {
-//     return InkWell(
-//       onTap: onTap,
-//       borderRadius: BorderRadius.circular(20),
-//       child: Container(
-//         width: double.infinity,
-//         height: 200,
-//         decoration: BoxDecoration(
-//           color: Colors.white,
-//           borderRadius: BorderRadius.circular(20),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.grey.withOpacity(0.3),
-//               spreadRadius: 2,
-//               blurRadius: 10,
-//               offset: Offset(0, 3),
-//             ),
-//           ],
-//           border: Border.all(
-//             color: Color(0xFFEAAFEA),
-//             width: 1.5,
-//           ),
-//         ),
-//         child: image == null
-//             ? Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(
-//                     Icons.cloud_upload,
-//                     size: 50,
-//                     color: Color(0xFFEAAFEA),
-//                   ),
-//                   SizedBox(height: 10),
-//                   Text(
-//                     isFront ? 'Front Side' : 'Back Side',
-//                     style: TextStyle(
-//                       fontSize: 18,
-//                       color: Colors.blue[800],
-//                       fontWeight: FontWeight.w500,
-//                     ),
-//                   ),
-//                   SizedBox(height: 5),
-//                   Text(
-//                     'Tap to upload',
-//                     style: TextStyle(
-//                       fontSize: 14,
-//                       color: Colors.grey[600],
-//                     ),
-//                   ),
-//                 ],
-//               )
-//             : ClipRRect(
-//                 borderRadius: BorderRadius.circular(20),
-//                 child: Image.file(
-//                   image,
-//                   width: double.infinity,
-//                   height: double.infinity,
-//                   fit: BoxFit.cover,
-//                 ),
-//               ),
-//       ),
-//     );
-//   }
-// }
-
-// class AadharVerificationScreen extends StatelessWidget {
-//   final String frontImagePath;
-//   final String backImagePath;
-
-//   const AadharVerificationScreen({
-//     Key? key,
-//     required this.frontImagePath,
-//     required this.backImagePath,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Aadhar Verification'),
-//         backgroundColor: const Color(0xFF551561),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(20.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(
-//               'Front Image:',
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 10),
-//             Container(
-//               height: 200,
-//               width: double.infinity,
-//               decoration: BoxDecoration(
-//                 border: Border.all(color: Colors.grey),
-//                 borderRadius: BorderRadius.circular(10),
-//               ),
-//               child: Image.file(File(frontImagePath), fit: BoxFit.cover),
-//             ),
-//             SizedBox(height: 20),
-//             Text(
-//               'Back Image:',
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 10),
-//             Container(
-//               height: 200,
-//               width: double.infinity,
-//               decoration: BoxDecoration(
-//                 border: Border.all(color: Colors.grey),
-//                 borderRadius: BorderRadius.circular(10),
-//               ),
-//               child: Image.file(File(backImagePath), fit: BoxFit.cover),
-//             ),
-//             SizedBox(height: 30),
-//             Center(
-//               child: ElevatedButton(
-//                 onPressed: () {
-//                   // Add your verification logic here
-//                 },
-//                 child: Text('Verify Aadhar'),
-//                 style: ElevatedButton.styleFrom(
-//                   backgroundColor: const Color(0xFF551561),
-//                   padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// import 'package:flutter/material.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'dart:io';
-
-// class UploadAadharPhotos extends StatefulWidget {
-//   @override
-//   _UploadAadharPhotosState createState() => _UploadAadharPhotosState();
-// }
-
-// class _UploadAadharPhotosState extends State<UploadAadharPhotos> {
-//   File? _frontImage;
-//   File? _backImage;
-//   final ImagePicker _picker = ImagePicker();
-
-//   Future<void> _pickImage(bool isFront) async {
-//     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
-//     if (pickedFile != null) {
-//       setState(() {
-//         if (isFront) {
-//           _frontImage = File(pickedFile.path);
-//         } else {
-//           _backImage = File(pickedFile.path);
-//         }
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       appBar: AppBar(
-//         backgroundColor: const Color(0xFF551561),
-//         title: Text(
-//           ' Upload Aadhar Card Photos',
-//           style: TextStyle(
-//             color: Colors.white, // White text color for contrast
-//             fontSize: 20, // Font size for the title
-//             fontWeight: FontWeight.bold,
-//           ),
-//         ),
-//         centerTitle: true,
-//         elevation: 0,
-//       ),
-//       body: SingleChildScrollView(
-//         padding: EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             Text(
-//               'Click Aadhar Card Front Photo\nआधार कार्डचा समोरील फोटो काढा.',
-//               style: TextStyle(
-//                   fontSize: 18,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black),
-//               textAlign: TextAlign.center,
-//             ),
-//             SizedBox(height: 30),
-
-//             // Front Side Upload
-//             _buildUploadCard(
-//               isFront: true,
-//               image: _frontImage,
-//               onTap: () => _pickImage(true),
-//             ),
-//             SizedBox(height: 30),
-//             Text(
-//               'Click Aadhar Card Back Photo\nआधार कार्डचा मागील फोटो काढा.',
-//               style: TextStyle(
-//                   fontSize: 18,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black),
-//               textAlign: TextAlign.center,
-//             ),
-//             // Back Side Upload
-//             _buildUploadCard(
-//               isFront: false,
-//               image: _backImage,
-//               onTap: () => _pickImage(false),
-//             ),
-//             SizedBox(height: 40),
-
-//             // Submit Button
-//             ElevatedButton(
-//               onPressed: _frontImage != null && _backImage != null
-//                   ? () {
-//                       // Handle submission
-//                       ScaffoldMessenger.of(context).showSnackBar(
-//                         SnackBar(
-//                             content: Text('Aadhar uploaded successfully!')),
-//                       );
-//                     }
-//                   : null,
-//               child: Padding(
-//                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-//                 child: Text(
-//                   'Submit',
-//                   style: TextStyle(fontSize: 20, color: Colors.white),
-//                 ),
-//               ),
-//               style: ElevatedButton.styleFrom(
-//                 padding:
-//                     const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
-//                 backgroundColor: const Color(0xFF551561),
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//                 elevation: 5,
-//                 shadowColor: Colors.teal.withOpacity(0.3),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildUploadCard({
-//     required bool isFront,
-//     required File? image,
-//     required VoidCallback onTap,
-//   }) {
-//     return InkWell(
-//       onTap: onTap,
-//       borderRadius: BorderRadius.circular(20),
-//       child: Container(
-//         width: double.infinity,
-//         height: 200,
-//         decoration: BoxDecoration(
-//           color: Colors.white,
-//           borderRadius: BorderRadius.circular(20),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.grey.withOpacity(0.3),
-//               spreadRadius: 2,
-//               blurRadius: 10,
-//               offset: Offset(0, 3),
-//             ),
-//           ],
-//           border: Border.all(
-//             color: Color(0xFFEAAFEA),
-//             width: 1.5,
-//           ),
-//         ),
-//         child: image == null
-//             ? Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(
-//                     Icons.cloud_upload,
-//                     size: 50,
-//                     color: Color(0xFFEAAFEA),
-//                   ),
-//                   SizedBox(height: 10),
-//                   Text(
-//                     isFront ? 'Front Side' : 'Back Side',
-//                     style: TextStyle(
-//                       fontSize: 18,
-//                       color: Colors.blue[800],
-//                       fontWeight: FontWeight.w500,
-//                     ),
-//                   ),
-//                   SizedBox(height: 5),
-//                   Text(
-//                     'Tap to upload',
-//                     style: TextStyle(
-//                       fontSize: 14,
-//                       color: Colors.grey[600],
-//                     ),
-//                   ),
-//                 ],
-//               )
-//             : ClipRRect(
-//                 borderRadius: BorderRadius.circular(20),
-//                 child: Image.file(
-//                   image,
-//                   width: double.infinity,
-//                   height: double.infinity,
-//                   fit: BoxFit.cover,
-//                 ),
-//               ),
-//       ),
-//     );
-//   }
-// }

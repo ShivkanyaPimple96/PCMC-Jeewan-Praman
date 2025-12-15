@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pcmc_jeevan_praman/Life_certificate_generate_screen/capture_photo_screen.dart';
+import 'package:pcmc_jeevan_praman/life_certificate_screens/capture_photo_screen.dart';
 
 class AadharDetailsScreen extends StatefulWidget {
   final int statusCode;
@@ -48,7 +48,7 @@ class _AadharDetailsScreenState extends State<AadharDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF92B7F7),
+        backgroundColor: Colors.yellow,
         title: const Center(
           child: Text(
             ' Pensoiner Aadhar Detailes ',
@@ -114,6 +114,7 @@ class _AadharDetailsScreenState extends State<AadharDetailsScreen> {
                         builder: (context) => PhotoClickScreen(
                           ppoNumber: widget.ppoNumber,
                           aadhaarNumber: widget.aadharNumber,
+                          mobileNumber: widget.mobileNumber,
 
                           //
                         ),

@@ -1,32 +1,30 @@
-// import 'dart:async'; // Add this import for Timer
-// import 'dart:convert';
-import 'dart:async';
+import 'dart:async'; // Add this import for Timer
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:pcmc_jeevan_praman/kyc_screens/enter_ppo_number_kyc_screen.dart';
-import 'package:pcmc_jeevan_praman/life_certificate_screens/view_button_screen.dart';
+import 'package:pcmc_jeevan_praman/KYC_Screens/enter_mobile_number_kyc_screen.dart';
+import 'package:pcmc_jeevan_praman/kyc_screens/pensioner_detailes_kyc_screen.dart';
 
-class AadharInputScreen extends StatefulWidget {
-  const AadharInputScreen({super.key});
+class EnterPpoNumberKycScreen extends StatefulWidget {
+  const EnterPpoNumberKycScreen({super.key});
 
   @override
-  _AadharInputScreenState createState() => _AadharInputScreenState();
+  _EnterPpoNumberKycScreenState createState() =>
+      _EnterPpoNumberKycScreenState();
 }
 
-class _AadharInputScreenState extends State<AadharInputScreen> {
+class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _ppoController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
-  final TextEditingController _mobileController =
-      TextEditingController(); // New controller for mobile
+  final TextEditingController _mobileNumberController = TextEditingController();
 
   bool _isLoading = false;
   bool _isSubmitting = false;
   bool _showGetOtpButton = false;
   bool _showOtpField = false;
   bool _isOtpLoading = false;
-  bool _isMobileEditable = false; // Flag to check if mobile is editable
   String? fullName;
   String? mobileNumber;
   bool _isPpoEditable = true; // Add this new variable
@@ -36,27 +34,34 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
   bool _isCountdownActive = false;
   late Timer _timer;
 
+  // String? validatePPONumber(String? value) {
+  //   if (value == null || value.isEmpty) {
+  //     return 'Please enter your PPO number';
+  //   } else if (value.length != 4) {
+  //     return 'PPO number must be 4 digits';
+  //   } else if (!RegExp(r'^[0-9]{4}$').hasMatch(value)) {
+  //     return 'PPO number must contain only digits';
+  //   }
+  //   return null;
+  // }
+
   String? validatePPONumber(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your PPO number';
-    } else if (!RegExp(r'^[0-9]{1,5}$').hasMatch(value)) {
-      return 'PPO number must be between 1 to 5 digits';
-    }
-    return null;
-  }
-
-  String? validateMobileNumber(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter mobile number';
-    } else if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
-      return 'Mobile number must be 10 digits';
+    } else if (!RegExp(r'^[0-9]{1,4}$').hasMatch(value)) {
+      return 'PPO number must be between 1 to 4 digits';
     }
     return null;
   }
 
   Future<void> _fetchMobileNumber(String ppoNumber) async {
-    if (ppoNumber.isEmpty || !RegExp(r'^[0-9]{1,5}$').hasMatch(ppoNumber)) {
-      _showInvalidPopup('Please enter a valid PPO number (1 to 5 digits).');
+    // if (ppoNumber.length != 4 || !RegExp(r'^[0-9]+$').hasMatch(ppoNumber)) {
+    //   _showInvalidPopup('Please enter a valid PPO number.');
+    //   return;
+    // }
+
+    if (ppoNumber.isEmpty || !RegExp(r'^[0-9]{1,4}$').hasMatch(ppoNumber)) {
+      _showInvalidPopup('Please enter a valid PPO number (1 to 4 digits).');
       return;
     }
 
@@ -65,7 +70,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
     });
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDetailsUsingPPONo?PPONumber=$ppoNumber';
+        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDataUsingPPONo?PPONumber=$ppoNumber';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -76,33 +81,24 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         print('Response Body: ${response.body}');
-
-        String fetchedMobile = data['data']['MobileNumber'] ?? '';
-
         setState(() {
           fullName = data['data']['FullName'];
-          mobileNumber = fetchedMobile;
-          _isPpoEditable = false; // Make PPO field non-editable after fetch
-          _isMobileEditable = fetchedMobile.isEmpty; // Make editable if empty
-
-          // Set the controller value
-          if (fetchedMobile.isNotEmpty) {
-            _mobileController.text = fetchedMobile;
-          } else {
-            _mobileController.clear();
-          }
-
+          mobileNumber = data['data']['MobileNumber'];
+          _mobileNumberController.text = mobileNumber ?? '';
           _showGetOtpButton = true;
+          _isPpoEditable = false; // Add this line to disable PPO editing
         });
       } else {
-        _showInvalidPopup(
-          'Please Complete Your KYC First.\nकृपया प्रथम तुमचे केवायसी पूर्ण करा.',
-          navigateToKycScreen: true,
-        );
+        _showInvalidPopup(' Please enter the correct PPO number.');
+        // _showInvalidPopup(
+        //   'Please Complete Your KYC First.\nकृपया प्रथम तुमचे केवायसी पूर्ण करा.',
+        //   navigateToKycScreen: true,
+        // );
       }
     } catch (e) {
       _showInvalidPopup(
           'Failed to fetch data: Please chack your Internet Connection\nकृपया तुमचे इंटरनेट कनेक्शन तपासा');
+      //  _showInvalidPopup('Failed to fetch data: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -111,19 +107,8 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
   }
 
   Future<void> _getOtp() async {
-    // Validate mobile number before sending OTP
-    if (_isMobileEditable) {
-      if (_mobileController.text.isEmpty ||
-          !RegExp(r'^[0-9]{10}$').hasMatch(_mobileController.text)) {
-        _showInvalidPopup('Please enter a valid 10-digit mobile number');
-        return;
-      }
-      // Update mobileNumber from the editable field
-      mobileNumber = _mobileController.text;
-    }
-
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=$mobileNumber';
+        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=${_mobileNumberController.text}';
 
     setState(() {
       _isOtpLoading = true;
@@ -139,7 +124,6 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
         setState(() {
           _showGetOtpButton = false;
           _showOtpField = true;
-          _isMobileEditable = false; // Lock the field after OTP is sent
           _startCountdown();
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,7 +134,8 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
       }
     } catch (e) {
       _showInvalidPopup(
-          'Failed to send OTP: काहीतरी चुकीचे झाले आहे. कृपया पुन्हा प्रयत्न करा.');
+          'Failed to send OTP: काहीतरी चुकीचे झाले आहे. कृपया पुन्हा प्रयत्न करा.');
+      // _showInvalidPopup('Failed to send OTP: $e');
     } finally {
       setState(() {
         _isOtpLoading = false;
@@ -161,12 +146,18 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
   Future<void> _submitOtp() async {
     final otp = _otpController.text;
     final ppoNumber = _ppoController.text;
+    final editedMobileNumber =
+        _mobileNumberController.text; // Get the edited mobile number
 
-    // Get the actual mobile number from the controller
-    final actualMobileNumber = _mobileController.text;
-
+    // Validate OTP
     if (otp.isEmpty || otp.length != 4) {
       _showInvalidPopup('Please enter a valid OTP');
+      return;
+    }
+
+    // Validate mobile number
+    if (editedMobileNumber.isEmpty || editedMobileNumber.length != 10) {
+      _showInvalidPopup('Please enter a valid 10-digit mobile number');
       return;
     }
 
@@ -187,24 +178,22 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
         final Map<String, dynamic> responseData = json.decode(response.body);
         print('Response Body: ${response.body}');
 
+        // Extract top-level fields
         int statusCode = responseData['StatusCode'];
         String messageCode = responseData['MessageCode'] ?? '';
         String message = responseData['Message'] ?? '';
 
+        // Extract nested 'Data' field
         Map<String, dynamic> data = responseData['Data'] ?? {};
 
+        // Extract fields from 'Data'
         String fullName = data['FullName'] ?? '';
-        // Use actualMobileNumber if user edited it, otherwise use API response
-        String mobileNumber = actualMobileNumber.isNotEmpty
-            ? actualMobileNumber
-            : (data['MobileNumber'] ?? '');
-        // String mobileNumber = data['MobileNumber'] ?? '';
+        String pensionType = data['PensionType'] ?? '';
         String address = data['Addresss'] ?? '';
         String createdAt = data['CreatedAt'] ?? '';
         String verificationStatusNote = data['VerificationStatusNote'] ?? '';
         String verificationStatus = data['VerificationStatus'] ?? '';
         String aadharNumber = data['AadhaarNumber'] ?? '';
-        String pensionType = data['PensionType'] ?? '';
         String url = data['Url'] ?? '';
         String dateOfBirth = '';
 
@@ -219,27 +208,19 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
           }
         }
 
+        // Navigate and pass the EDITED mobile number from the controller
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewButtonScreen(
-              statusCode: statusCode,
-              messageCode: messageCode,
-              message: message,
-              verificationStatus: verificationStatus,
+            builder: (context) => PensionerDetailesKYCScreen(
               fullName: fullName,
-              mobileNumber: mobileNumber,
-              address: address,
-              createdAt: createdAt,
-              verificationStatusNote: verificationStatusNote,
-              aadharNumber: aadharNumber,
-              url: url,
-              dateOfBirth: dateOfBirth,
+              mobileNumber: editedMobileNumber, // Pass the edited mobile number
               ppoNumber: ppoNumber,
               pensionType: pensionType,
             ),
           ),
         );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('OTP Submitted Successfully!')),
         );
@@ -258,14 +239,15 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
     }
   }
 
+  // Start the 30-second countdown
   void _startCountdown() {
     _isCountdownActive = true;
-    _countdown = 30;
+    _countdown = 30; // Reset countdown to 30 seconds
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdown == 0) {
         _timer.cancel();
         setState(() {
-          _isCountdownActive = false;
+          _isCountdownActive = false; // Stop countdown
         });
       } else {
         setState(() {
@@ -306,13 +288,26 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
           ),
           actions: <Widget>[
             ElevatedButton(
+              // onPressed: () {
+              //   Navigator.of(context).pop(); // close the dialog
+              //   if (navigateToKycScreen) {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //           builder: (context) => EnterMobileNumberScreen()),
+              //     );
+              //   }
+              // },
+
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Close the dialog
                 if (navigateToKycScreen) {
+                  String currentPpo = _ppoController.text;
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EnterPpoNumberKycScreen(),
+                      builder: (context) =>
+                          EnterMobileNumberKYCScreen(ppoNumber: currentPpo),
                     ),
                   ).then((returnedPpo) {
                     if (returnedPpo != null) {
@@ -333,12 +328,10 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
 
   @override
   void dispose() {
+    _mobileNumberController.dispose();
     if (_isCountdownActive) {
       _timer.cancel();
     }
-    _ppoController.dispose();
-    _otpController.dispose();
-    _mobileController.dispose();
     super.dispose();
   }
 
@@ -349,10 +342,10 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
         backgroundColor: Color(0xFF92B7F7),
         title: const Center(
           child: Text(
-            'Enter PPO Number [Step-1] ',
+            'Enter PPO Number[Step-1] ',
             style: TextStyle(
               color: Colors.black,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -366,7 +359,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
             child: Column(
               children: [
                 const Text(
-                  'Enter Pensioner PPO Number\nपेन्शनर चा PPO नंबर टाका',
+                  'Enter Pensioner PPO  for KYC\nपेन्शनर चा PPO नंबर टाका',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -377,7 +370,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                 const SizedBox(height: 30),
                 Center(
                   child: Container(
-                    width: 250,
+                    width: 200,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
@@ -390,7 +383,6 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                       maxLength: 5,
                       validator: validatePPONumber,
                       enabled: _isPpoEditable, // Add this line
-
                       style: const TextStyle(color: Colors.black87),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -415,43 +407,51 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  // Mobile Number Container - Editable or Display
+                  const Text(
+                    'Enter Your Mobile Number\nतुमचा मोबाईल नंबर टाका',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
                   Container(
+                    height: 60,
                     width: 300,
-                    padding: EdgeInsets.all(_isMobileEditable ? 0 : 16.0),
+                    padding: EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFF92B7F7), width: 2),
                     ),
-                    child: _isMobileEditable
-                        ? TextFormField(
-                            controller: _mobileController,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            validator: validateMobileNumber,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Enter Mobile Number',
-                              labelStyle: TextStyle(color: Colors.grey[700]),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.all(16.0),
-                              counterText: '',
-                            ),
-                          )
-                        : Text(
-                            'Mobile Number: ${_mobileController.text}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                    child: TextFormField(
+                      controller: _mobileNumberController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        // labelText: 'Mobile Number',
+                        border: InputBorder.none,
+                      ),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          mobileNumber = value;
+                        });
+                      },
+                    ),
+                    // child: Text(
+                    //   'Mobile Number: $mobileNumber',
+                    //   style: const TextStyle(
+                    //     fontSize: 20,
+                    //     fontWeight: FontWeight.bold,
+                    //     color: Colors.black,
+                    //   ),
+                    // ),
                   ),
                   const SizedBox(height: 20),
                   if (_showGetOtpButton)
@@ -460,7 +460,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 35, vertical: 10),
-                        backgroundColor: Colors.green,
+                        backgroundColor: Color(0xFF92B7F7),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
@@ -476,7 +476,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -484,7 +484,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                   if (_showOtpField) ...[
                     const SizedBox(height: 20),
                     Container(
-                      width: 250,
+                      width: 170,
                       child: TextFormField(
                         controller: _otpController,
                         keyboardType: TextInputType.number,
@@ -512,7 +512,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 35, vertical: 10),
-                        backgroundColor: Colors.green,
+                        backgroundColor: Color(0xFF92B7F7),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
@@ -528,7 +528,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -573,7 +573,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 35, vertical: 8),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(0xFF92B7F7),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -589,7 +589,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                             textAlign: TextAlign.center,
                           ),

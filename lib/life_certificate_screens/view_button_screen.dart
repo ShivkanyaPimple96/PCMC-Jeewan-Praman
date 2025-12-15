@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pcmc_jeevan_praman/Life_certificate_generate_screen/aadhar_detailes_screen.dart';
-import 'package:pcmc_jeevan_praman/Life_certificate_generate_screen/capture_photo_screen.dart';
-import 'package:pcmc_jeevan_praman/Life_certificate_generate_screen/view_certificate.dart';
+import 'package:pcmc_jeevan_praman/life_certificate_screens/aadhar_detailes_screen.dart';
+import 'package:pcmc_jeevan_praman/life_certificate_screens/capture_photo_screen.dart';
+import 'package:pcmc_jeevan_praman/life_certificate_screens/view_certificate.dart';
 
 class ViewButtonScreen extends StatefulWidget {
   final int statusCode;
@@ -17,6 +17,7 @@ class ViewButtonScreen extends StatefulWidget {
   final String url;
   final String dateOfBirth;
   final String ppoNumber;
+  final String pensionType;
 
   ViewButtonScreen({
     required this.statusCode,
@@ -32,6 +33,7 @@ class ViewButtonScreen extends StatefulWidget {
     required this.url,
     required this.dateOfBirth,
     required this.ppoNumber,
+    required this.pensionType,
   });
 
   @override
@@ -99,11 +101,14 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
                   _buildTextField(
                       'Aadhar Number(आधार नंबर):', widget.aadharNumber),
                   Divider(thickness: 1, color: Colors.grey[300]),
+                  _buildTextField(
+                      'Pension Type(पेन्शन प्रकार):', widget.pensionType),
+                  Divider(thickness: 1, color: Colors.grey[300]),
                   _buildTextField('Address(पत्ता):', widget.address),
                   Divider(thickness: 1, color: Colors.grey[300]),
-                  _buildTextField(
-                      'Date of Birth(जन्मतारीख):', widget.dateOfBirth),
-                  Divider(thickness: 1, color: Colors.grey[300]),
+                  // _buildTextField(
+                  //     'Date of Birth(जन्मतारीख):', widget.dateOfBirth),
+                  // Divider(thickness: 1, color: Colors.grey[300]),
                 ],
               ),
             ),
@@ -127,9 +132,9 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
                   _buildTextField('Verification Status(पडताळणी ची सद्यस्थिती):',
                       widget.verificationStatus),
                   Divider(thickness: 1, color: Colors.grey[300]),
-                  _buildTextField(
-                      'Verification Status Note(पडताळणी बद्दल अधिक माहिती):',
-                      widget.verificationStatusNote),
+                  // _buildTextField(
+                  //     'Verification Status Note(पडताळणी बद्दल अधिक माहिती):',
+                  //     widget.verificationStatusNote),
                 ],
               ),
             ),
@@ -157,35 +162,13 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
               builder: (context) => PhotoClickScreen(
                 ppoNumber: widget.ppoNumber,
                 aadhaarNumber: widget.aadharNumber,
+                mobileNumber: widget.mobileNumber,
 
                 //
               ),
             ),
           );
         },
-        // onPressed: () {
-        //   Navigator.push(
-        //       context,
-        //       MaterialPageRoute(
-        //         builder: (context) => AadharVerificationScreen(
-        //           ppoNumber: widget.ppoNumber,
-        //           fullName: widget.fullName,
-        //           aadharNumber: widget.aadharNumber,
-        //           mobileNumber: widget.mobileNumber,
-        //           address: widget.address,
-        //           dateOfBirth: widget.dateOfBirth,
-        //           verificationStatusNote: widget.verificationStatusNote,
-        //           inputFieldOneValue: inputFieldOneController
-        //               .text, // Get value from input field
-        //           selectedDropdownValue:
-        //               selectedDropdownValue, // Pass selected dropdown value
-        //         ),
-        //         //  PhotoClickScreen(
-        //         //   aadhaarNumber: widget.aadharNumber,
-        //         //   inputFieldOneValue: '',
-        //         // ),
-        //       ));
-        // },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
           backgroundColor: Colors.blue,
@@ -247,15 +230,64 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
       );
     } else if (widget.verificationStatus == "Verification In Progress") {
       return ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                title: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange,
+                      size: 28,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Verification Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  'Your verification is in progress.\nतुमची पडताळणी प्रक्रियेत आहे.',
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
-          backgroundColor: const Color.fromARGB(31, 103, 74, 2),
+          backgroundColor: Colors.lightBlue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
           ),
-          elevation: 5,
-          shadowColor: Colors.grey.withOpacity(0.3),
+          // elevation: 5,
+          // shadowColor: const Color.fromARGB(255, 22, 121, 160).withOpacity(0.3),
         ),
         child: const Text(
           "Verification In Progress\nपडताळणी प्रगतीपथावर आहे",
@@ -270,12 +302,19 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
     } else if (widget.verificationStatus == "Application Approved") {
       return ElevatedButton(
         onPressed: () {
-          Navigator.push(
-            context,
+          // In your button onPressed
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => CertificateWebViewScreen(url: widget.url),
             ),
+            (route) => false, // Removes all previous routes
           );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => CertificateWebViewScreen(url: widget.url),
+          //   ),
+          // );
         },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
@@ -305,6 +344,7 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
               builder: (context) => PhotoClickScreen(
                 ppoNumber: widget.ppoNumber,
                 aadhaarNumber: widget.aadharNumber,
+                mobileNumber: widget.mobileNumber,
 
                 //
               ),

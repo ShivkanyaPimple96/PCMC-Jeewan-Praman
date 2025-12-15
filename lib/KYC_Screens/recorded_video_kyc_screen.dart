@@ -6,7 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 import 'package:path/path.dart';
-import 'package:pcmc_jeevan_praman/kyc_screens/response_kyc_screen.dart';
+import 'package:pcmc_jeevan_praman/kyc_screens/kyc_declaration_screen.dart';
+
 import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
 
@@ -304,7 +305,7 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
       // request.fields['Longitude'] = widget.longitude;
       request.fields['Address'] = widget.address;
       request.fields['Gender'] = widget.gender;
-      request.fields['LastSubmit'] = "Submitted";
+      request.fields['LastSubmit'] = "";
 
       // if (_image != null) {
       //   request.files.add(await http.MultipartFile.fromPath(
@@ -332,6 +333,8 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
       // Sending the
       var response = await request.send().timeout(Duration(seconds: 240));
       // var response = await request.send();
+      print('Response status: ${response.statusCode}');
+      // print('Response body: $responseBody');
 
       setState(() {
         _isLoading = false; // Hide loader after response
@@ -341,18 +344,31 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ResponseKYCScreen(
-              message:
-                  '''You have successfully completed the process for your life certificate.
-Your life certificate is currently under verification. You will receive your certificate soon. Thank you for your patience
-
-तुम्ही तुमच्या जीवन प्रमाणपत्राची प्रक्रिया यशस्वीपणे पूर्ण केली आहे.
-तुमचे जीवन प्रमाणपत्र सध्या पडताळणीखाली आहे. तुम्हाला तुमचे प्रमाणपत्र लवकरच मिळेल.
-तुमच्या संयमाबद्दल धन्यवाद.''',
-              success: true,
+            builder: (context) => KycDeclarationScreen(
+              ppoNumber: widget.ppoNumber,
+              videoPath: widget.videoPath,
+              aadhaarNumber: widget.aadhaarNumber,
+              mobileNumber: widget.mobileNumber,
+              lastSubmit: "",
             ),
           ),
+          // (Route<dynamic> route) => false, // This removes all previous routes
         );
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (context) => ResponseKYCScreen(
+//               message:
+//                   '''You have successfully completed the process for your life certificate.
+// Your life certificate is currently under verification. You will receive your certificate soon. Thank you for your patience
+
+// तुम्ही तुमच्या जीवन प्रमाणपत्राची प्रक्रिया यशस्वीपणे पूर्ण केली आहे.
+// तुमचे जीवन प्रमाणपत्र सध्या पडताळणीखाली आहे. तुम्हाला तुमचे प्रमाणपत्र लवकरच मिळेल.
+// तुमच्या संयमाबद्दल धन्यवाद.''',
+//               success: true,
+//             ),
+//           ),
+//         );
 
         // Navigator.push(
         //   context,
@@ -364,32 +380,40 @@ Your life certificate is currently under verification. You will receive your cer
         //     ),
         //   ),
         // );
-      } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResponseKYCScreen(
-              message:
-                  'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
-              success: false,
-            ),
-          ),
-        );
       }
+      // else {
+      //   Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => ResponseKYCScreen(
+      //         message:
+      //             'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
+      //         success: false,
+      //       ),
+      //     ),
+      //   );
+      // }
     } catch (e) {
       setState(() {
         _isLoading = false; // Hide loader on error
       });
-      Navigator.push(
+
+      print('Error during submission: $e');
+      _showErrorDialog(
         context,
-        MaterialPageRoute(
-          builder: (context) => ResponseKYCScreen(
-            message:
-                'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
-            success: false,
-          ),
-        ),
+        'Note',
+        'Failed to submit Video: Check your Internet Connection and Please try again.\nतुमचे इंटरनेट कनेक्शन तपासा आणि कृपया पुन्हा प्रयत्न करा.',
       );
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => ResponseKYCScreen(
+      //       message:
+      //           'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
+      //       success: false,
+      //     ),
+      //   ),
+      // );
     }
   }
 

@@ -278,6 +278,8 @@ class _DeclarationPageScreenState extends State<DeclarationPageScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ResponseScreen(
+              mobileNumber: widget.mobileNumber,
+              ppoNumber: widget.ppoNumber,
               message:
                   '''You have successfully completed the process for your life certificate.
 Your life certificate is currently under verification. You will receive your certificate soon. Thank you for your patience
@@ -294,6 +296,8 @@ Your life certificate is currently under verification. You will receive your cer
           context,
           MaterialPageRoute(
             builder: (context) => ResponseScreen(
+              mobileNumber: widget.mobileNumber,
+              ppoNumber: widget.ppoNumber,
               message:
                   'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
               success: false,
@@ -309,6 +313,8 @@ Your life certificate is currently under verification. You will receive your cer
         context,
         MaterialPageRoute(
           builder: (context) => ResponseScreen(
+            mobileNumber: widget.mobileNumber,
+            ppoNumber: widget.ppoNumber,
             message:
                 'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
             success: false,

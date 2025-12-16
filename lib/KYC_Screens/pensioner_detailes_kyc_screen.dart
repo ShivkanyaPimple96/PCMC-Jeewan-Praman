@@ -1,7 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:pcmc_jeevan_praman/KYC_Screens/aadhar_verification_kyc_screen.dart';
 
 class PensionerDetailesKYCScreen extends StatefulWidget {

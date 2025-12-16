@@ -121,27 +121,6 @@ class _AadharDetailsScreenState extends State<AadharDetailsScreen> {
                       ),
                     );
                   },
-                  // onPressed: () {
-                  //   // Navigate to the NextScreen and pass data
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => AadharVerificationScreen(
-                  //         ppoNumber: widget.ppoNumber,
-                  //         fullName: widget.fullName,
-                  //         aadharNumber: widget.aadharNumber,
-                  //         mobileNumber: widget.mobileNumber,
-                  //         address: widget.address,
-                  //         dateOfBirth: widget.dateOfBirth,
-                  //         verificationStatusNote: widget.verificationStatusNote,
-                  //         inputFieldOneValue: inputFieldOneController
-                  //             .text, // Get value from input field
-                  //         selectedDropdownValue:
-                  //             selectedDropdownValue, // Pass selected dropdown value
-                  //       ),
-                  //     ),
-                  //   );
-                  // },
                   style: ElevatedButton.styleFrom(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 35, vertical: 8),

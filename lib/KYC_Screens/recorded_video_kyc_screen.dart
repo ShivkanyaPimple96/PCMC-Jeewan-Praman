@@ -354,45 +354,7 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
           ),
           // (Route<dynamic> route) => false, // This removes all previous routes
         );
-//         Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => ResponseKYCScreen(
-//               message:
-//                   '''You have successfully completed the process for your life certificate.
-// Your life certificate is currently under verification. You will receive your certificate soon. Thank you for your patience
-
-// तुम्ही तुमच्या जीवन प्रमाणपत्राची प्रक्रिया यशस्वीपणे पूर्ण केली आहे.
-// तुमचे जीवन प्रमाणपत्र सध्या पडताळणीखाली आहे. तुम्हाला तुमचे प्रमाणपत्र लवकरच मिळेल.
-// तुमच्या संयमाबद्दल धन्यवाद.''',
-//               success: true,
-//             ),
-//           ),
-//         );
-
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => ResponseScreen(
-        //       message:
-        //           'All data submitted successfully! \nसर्व डेटा यशस्वीरित्या सबमिट केला आहे',
-        //       success: true,
-        //     ),
-        //   ),
-        // );
       }
-      // else {
-      //   Navigator.push(
-      //     context,
-      //     MaterialPageRoute(
-      //       builder: (context) => ResponseKYCScreen(
-      //         message:
-      //             'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
-      //         success: false,
-      //       ),
-      //     ),
-      //   );
-      // }
     } catch (e) {
       setState(() {
         _isLoading = false; // Hide loader on error
@@ -404,16 +366,6 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
         'Note',
         'Failed to submit Video: Check your Internet Connection and Please try again.\nतुमचे इंटरनेट कनेक्शन तपासा आणि कृपया पुन्हा प्रयत्न करा.',
       );
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => ResponseKYCScreen(
-      //       message:
-      //           'Failed to submit data. Please try again.\nडेटा सबमिट करण्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा',
-      //       success: false,
-      //     ),
-      //   ),
-      // );
     }
   }
 

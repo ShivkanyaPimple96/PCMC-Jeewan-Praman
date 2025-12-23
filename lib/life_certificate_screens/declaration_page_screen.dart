@@ -494,32 +494,32 @@ Your life certificate is currently under verification. You will receive your cer
                           },
                         ),
                         SizedBox(height: height * 0.02),
-                        Text(
-                          'वेतन व भत्ते / मानधन इ. तपशिल',
-                          style: TextStyle(
-                              fontSize: width * 0.04,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: height * 0.01),
-                        TextFormField(
-                          controller: salaryDetailsTitleController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(fontSize: width * 0.04),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Enter your salary details',
-                            hintStyle: TextStyle(fontSize: width * 0.035),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: width * 0.03,
-                                vertical: height * 0.015),
-                          ),
-                          validator: (value) {
-                            if (hasJob == 'yes' && value!.isEmpty) {
-                              return 'This field is required';
-                            }
-                            return null;
-                          },
-                        ),
+                        // Text(
+                        //   'वेतन व भत्ते / मानधन इ. तपशिल',
+                        //   style: TextStyle(
+                        //       fontSize: width * 0.04,
+                        //       fontWeight: FontWeight.bold),
+                        // ),
+                        // SizedBox(height: height * 0.01),
+                        // TextFormField(
+                        //   controller: salaryDetailsTitleController,
+                        //   keyboardType: TextInputType.number,
+                        //   style: TextStyle(fontSize: width * 0.04),
+                        //   decoration: InputDecoration(
+                        //     border: OutlineInputBorder(),
+                        //     hintText: 'Enter your salary details',
+                        //     hintStyle: TextStyle(fontSize: width * 0.035),
+                        //     contentPadding: EdgeInsets.symmetric(
+                        //         horizontal: width * 0.03,
+                        //         vertical: height * 0.015),
+                        //   ),
+                        //   validator: (value) {
+                        //     if (hasJob == 'yes' && value!.isEmpty) {
+                        //       return 'This field is required';
+                        //     }
+                        //     return null;
+                        //   },
+                        // ),
                         SizedBox(height: height * 0.02),
                         Text(
                           'नवीन नियुक्तीचा दिनांक',

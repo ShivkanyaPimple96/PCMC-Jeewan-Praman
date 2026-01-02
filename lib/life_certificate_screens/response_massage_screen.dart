@@ -61,7 +61,8 @@ class _ResponseScreenState extends State<ResponseScreen> {
                 aadharNumber: data['aadharNumber']?.toString() ??
                     data['AdharCardNo']?.toString() ??
                     '',
-                url: '', // Not present in API response, keeping empty
+                url: '', 
+                profilePhotoUrl: '',// Not present in API response, keeping empty
                 dateOfBirth: data['dateOfBirth']?.toString() ?? '',
                 ppoNumber: data['ppoNumber']?.toString() ??
                     data['PPONumber']?.toString() ??

@@ -66,7 +66,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
     });
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDetailsUsingPPONo?PPONumber=$ppoNumber';
+        'https://lc.pcmcpensioner.in/api/aadhar/GetDetailsUsingPPONo?PPONumber=$ppoNumber';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -124,7 +124,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
     }
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=$mobileNumber';
+        'https://lc.pcmcpensioner.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=$mobileNumber';
 
     setState(() {
       _isOtpLoading = true;
@@ -172,7 +172,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
     }
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=$ppoNumber&Otp=$otp';
+        'https://lc.pcmcpensioner.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=$ppoNumber&Otp=$otp';
 
     setState(() {
       _isOtpLoading = true;
@@ -511,157 +511,7 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                       ),
                     ],
                   ),
-                  // Column(
-                  //   children: [
-                  //     // Mobile Number Field with integrated Edit button
-                  //     Container(
-                  //       height: 60,
-                  //       width: 300,
-                  //       padding: EdgeInsets.symmetric(
-                  //           horizontal: 16.0, vertical: 12.0),
-                  //       decoration: BoxDecoration(
-                  //         color: _isMobileEditable
-                  //             ? Colors.white
-                  //             : Colors.grey[200],
-                  //         borderRadius: BorderRadius.circular(10),
-                  //         border: Border.all(
-                  //           color: _isMobileEditable
-                  //               ? Colors.green
-                  //               : Color(0xFF92B7F7),
-                  //           width: 2,
-                  //         ),
-                  //       ),
-                  //       child: Row(
-                  //         children: [
-                  //           Expanded(
-                  //             child: TextFormField(
-                  //               controller: _mobileNumberController,
-                  //               keyboardType: TextInputType.phone,
-                  //               enabled: _isMobileEditable,
-                  //               maxLength: 10,
-                  //               decoration: InputDecoration(
-                  //                 border: InputBorder.none,
-                  //                 counterText: '',
-                  //                 hintText: 'Mobile Number',
-                  //                 hintStyle: TextStyle(color: Colors.grey[400]),
-                  //               ),
-                  //               style: TextStyle(
-                  //                 fontSize: 20,
-                  //                 fontWeight: FontWeight.bold,
-                  //                 color: _isMobileEditable
-                  //                     ? Colors.black
-                  //                     : Colors.black54,
-                  //               ),
-                  //               onChanged: (value) {
-                  //                 setState(() {
-                  //                   mobileNumber = value;
-                  //                 });
-                  //               },
-                  //             ),
-                  //           ),
-                  //           // Edit/Done button inside the field
-                  //           if (!_showOtpField)
-                  //             InkWell(
-                  //               onTap: () {
-                  //                 setState(() {
-                  //                   _isMobileEditable = !_isMobileEditable;
-                  //                 });
-                  //               },
-                  //               child: Container(
-                  //                 padding: EdgeInsets.all(4),
-                  //                 child: Icon(
-                  //                   _isMobileEditable
-                  //                       ? Icons.check_circle
-                  //                       : Icons.edit,
-                  //                   color: _isMobileEditable
-                  //                       ? Colors.green
-                  //                       : Colors.blue,
-                  //                   size: 24,
-                  //                 ),
-                  //               ),
-                  //             ),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // Column(
-                  //   children: [
-                  //     // Edit Button - Only show if OTP field is not showing
-                  //     if (!_showOtpField)
-                  //       Align(
-                  //         alignment: Alignment.centerRight,
-                  //         child: Padding(
-                  //           padding: const EdgeInsets.only(right: 50.0),
-                  //           child: TextButton.icon(
-                  //             onPressed: () {
-                  //               setState(() {
-                  //                 _isMobileEditable = !_isMobileEditable;
-                  //               });
-                  //             },
-                  //             icon: Icon(
-                  //               _isMobileEditable ? Icons.check : Icons.edit,
-                  //               color: _isMobileEditable
-                  //                   ? Colors.green
-                  //                   : Colors.blue,
-                  //               size: 20,
-                  //             ),
-                  //             label: Text(
-                  //               _isMobileEditable ? 'Done' : 'Edit',
-                  //               style: TextStyle(
-                  //                 color: _isMobileEditable
-                  //                     ? Colors.green
-                  //                     : Colors.blue,
-                  //                 fontSize: 16,
-                  //                 fontWeight: FontWeight.bold,
-                  //               ),
-                  //             ),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     if (!_showOtpField) const SizedBox(height: 10),
-                  //     // Mobile Number Field
-                  //     Container(
-                  //       height: 60,
-                  //       width: 300,
-                  //       padding: EdgeInsets.all(16.0),
-                  //       decoration: BoxDecoration(
-                  //         color: _isMobileEditable
-                  //             ? Colors.white
-                  //             : Colors.grey[200],
-                  //         borderRadius: BorderRadius.circular(10),
-                  //         border: Border.all(
-                  //           color: _isMobileEditable
-                  //               ? Colors.green
-                  //               : Color(0xFF92B7F7),
-                  //           width: 2,
-                  //         ),
-                  //       ),
-                  //       child: TextFormField(
-                  //         controller: _mobileNumberController,
-                  //         keyboardType: TextInputType.phone,
-                  //         enabled: _isMobileEditable,
-                  //         maxLength: 10,
-                  //         decoration: InputDecoration(
-                  //           border: InputBorder.none,
-                  //           counterText: '',
-                  //         ),
-                  //         style: TextStyle(
-                  //           fontSize: 20,
-                  //           fontWeight: FontWeight.bold,
-                  //           color: _isMobileEditable
-                  //               ? Colors.black
-                  //               : Colors.black54,
-                  //         ),
-                  //         onChanged: (value) {
-                  //           setState(() {
-                  //             mobileNumber = value;
-                  //           });
-                  //         },
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+
                   const SizedBox(height: 20),
                   if (_showGetOtpButton)
                     ElevatedButton(

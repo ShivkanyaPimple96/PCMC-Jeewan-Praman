@@ -30,7 +30,7 @@ class _ResponseKYCScreenState extends State<ResponseKYCScreen> {
 
     try {
       final url = Uri.parse(
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDataUsingPPONo?PPONumber=${widget.ppoNumber}');
+          'https://lc.pcmcpensioner.in/api/aadhar/GetDataUsingPPONo?PPONumber=${widget.ppoNumber}');
 
       final response = await http.get(url);
 

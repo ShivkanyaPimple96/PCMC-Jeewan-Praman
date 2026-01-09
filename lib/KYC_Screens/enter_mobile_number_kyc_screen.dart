@@ -35,7 +35,7 @@ class _EnterMobileNumberKYCScreenState
     try {
       final mobileNumber = _mobileController.text.trim();
       final url = Uri.parse(
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${widget.ppoNumber}&MobileNo=$mobileNumber');
+          'https://lc.pcmcpensioner.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${widget.ppoNumber}&MobileNo=$mobileNumber');
 
       final response = await http.get(url);
       print('API Response Status: ${response.statusCode}');
@@ -76,7 +76,7 @@ class _EnterMobileNumberKYCScreenState
     try {
       final otp = _otpController.text.trim();
       final url = Uri.parse(
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=${widget.ppoNumber}&Otp=$otp');
+          'https://lc.pcmcpensioner.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=${widget.ppoNumber}&Otp=$otp');
 
       final response = await http.get(url);
       print('API Response Status: ${response.statusCode}');

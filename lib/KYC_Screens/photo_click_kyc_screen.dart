@@ -177,8 +177,7 @@ class _PhotoClickKYCScreenState extends State<PhotoClickKYCScreen> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://testingpcmcpensioner.altwise.in/api/aadhar/submitKycData'),
+        Uri.parse('https://lc.pcmcpensioner.in/api/aadhar/submitKycData'),
       );
 
       request.fields['aadhaarNumber'] = widget.aadhaarNumber;

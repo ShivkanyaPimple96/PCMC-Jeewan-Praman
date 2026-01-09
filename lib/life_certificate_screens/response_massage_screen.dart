@@ -30,7 +30,7 @@ class _ResponseScreenState extends State<ResponseScreen> {
 
     try {
       final url = Uri.parse(
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDataUsingPPONo?PPONumber=${widget.ppoNumber}');
+          'https://lc.pcmcpensioner.in/api/aadhar/GetDataUsingPPONo?PPONumber=${widget.ppoNumber}');
 
       final response = await http.get(url);
 
@@ -61,8 +61,9 @@ class _ResponseScreenState extends State<ResponseScreen> {
                 aadharNumber: data['aadharNumber']?.toString() ??
                     data['AdharCardNo']?.toString() ??
                     '',
-                url: '', 
-                profilePhotoUrl: '',// Not present in API response, keeping empty
+                url: '',
+                profilePhotoUrl:
+                    '', // Not present in API response, keeping empty
                 dateOfBirth: data['dateOfBirth']?.toString() ?? '',
                 ppoNumber: data['ppoNumber']?.toString() ??
                     data['PPONumber']?.toString() ??

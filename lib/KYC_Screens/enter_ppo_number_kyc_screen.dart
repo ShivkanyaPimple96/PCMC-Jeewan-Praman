@@ -70,7 +70,7 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
     });
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetDataUsingPPONo?PPONumber=$ppoNumber';
+        'https://lc.pcmcpensioner.in/api/aadhar/GetDataUsingPPONo?PPONumber=$ppoNumber';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -108,7 +108,7 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
 
   Future<void> _getOtp() async {
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=${_mobileNumberController.text}';
+        'https://lc.pcmcpensioner.in/api/aadhar/GetOtpUsingMobileNo?PPONumber=${_ppoController.text}&MobileNo=${_mobileNumberController.text}';
 
     setState(() {
       _isOtpLoading = true;
@@ -162,7 +162,7 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
     }
 
     final url =
-        'https://testingpcmcpensioner.altwise.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=$ppoNumber&Otp=$otp';
+        'https://lc.pcmcpensioner.in/api/aadhar/SubmitOtpUsingPPONo?PPONumber=$ppoNumber&Otp=$otp';
 
     setState(() {
       _isOtpLoading = true;

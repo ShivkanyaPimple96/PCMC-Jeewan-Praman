@@ -162,8 +162,7 @@ class _KycDeclarationScreenState extends State<KycDeclarationScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://testingpcmcpensioner.altwise.in/api/aadhar/submitKycData'),
+        Uri.parse('https://lc.pcmcpensioner.in/api/aadhar/submitKycData'),
       );
 
       // request.fields['isHavingJob'] = hasJob ?? "";

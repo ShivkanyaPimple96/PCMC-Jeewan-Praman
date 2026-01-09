@@ -67,7 +67,7 @@ class _AadharVerificationKYCScreenState
             (X509Certificate cert, String host, int port) => true;
 
       final String apiUrl =
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/GetAadharOtp?AadhaarNumber=${widget.aadharNumber}&PPONumber=${widget.ppoNumber}';
+          'https://lc.pcmcpensioner.in/api/aadhar/GetAadharOtp?AadhaarNumber=${widget.aadharNumber}&PPONumber=${widget.ppoNumber}';
 
       final request = await client.getUrl(Uri.parse(apiUrl));
       final response = await request.close();
@@ -125,7 +125,7 @@ class _AadharVerificationKYCScreenState
             (X509Certificate cert, String host, int port) => true;
 
       final String apiUrl =
-          'https://testingpcmcpensioner.altwise.in/api/aadhar/SubmitAadharOtp?PPONumber=${widget.ppoNumber}&ClientId=$clientId&Otp=${otpController.text}';
+          'https://lc.pcmcpensioner.in/api/aadhar/SubmitAadharOtp?PPONumber=${widget.ppoNumber}&ClientId=$clientId&Otp=${otpController.text}';
 
       final request = await client.getUrl(Uri.parse(apiUrl));
       final response = await request.close();

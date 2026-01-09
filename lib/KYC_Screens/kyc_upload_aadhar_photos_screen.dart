@@ -104,7 +104,7 @@ class _KycUploadAadharPhotosScreenState
             children: [
               Divider(thickness: 2.5),
               Text(
-                'Are you sure you want to submit this Aadhar photos?\nतुम्हाला खात्री आहे की तुम्ही हे आधार फोटो सबमिट करू इच्छिता?',
+                'Are you sure you want to submit this Aadhar photos?\nतुम्हाला खात्री आहे की तुम्ही हे आधार फोटो सबमिट करू इच्छिता ?',
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -141,8 +141,7 @@ class _KycUploadAadharPhotosScreenState
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://testingpcmcpensioner.altwise.in/api/aadhar/submitKycData'),
+        Uri.parse('https://lc.pcmcpensioner.in/api/aadhar/submitKycData'),
       );
 
       // Add Aadhar number to request
@@ -378,13 +377,6 @@ class _KycUploadAadharPhotosScreenState
               ],
             ),
           ),
-          // if (_isCompressing)
-          //   Container(
-          //     color: Colors.black.withOpacity(0.5),
-          //     child: Center(
-          //       child: CircularProgressIndicator(),
-          //     ),
-          //   ),
         ],
       ),
     );

@@ -134,75 +134,6 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
       _isLoading = true; // Start loading when the submission is confirmed
     });
 
-    // try {
-    //   // Compress the video
-    //   final compressedVideo = await VideoCompress.compressVideo(
-    //     widget.videoPath,
-    //     quality: VideoQuality.MediumQuality,
-    //     deleteOrigin: false,
-    //   );
-
-    //   // if (compressedVideo == null ||
-    //   //     compressedVideo.filesize! > 10 * 1024 * 1024) {
-    //   //   setState(() {
-    //   //     _isLoading = false; // Stop loading if the video is too large
-    //   //   });
-    //   //   showDialog(
-    //   //     context: context,
-    //   //     builder: (BuildContext context) {
-    //   //       return AlertDialog(
-    //   //         title: Text('Note '),
-    //   //         content:
-    //   //             Text('Video is too large. Please record a smaller video.'),
-    //   //         actions: [
-    //   //           ElevatedButton(
-    //   //             onPressed: () {
-    //   //               Navigator.of(context).pop(); // Close the dialog
-    //   //             },
-    //   //             child: Text('OK'),
-    //   //           ),
-    //   //         ],
-    //   //       );
-    //   //     },
-    //   //   );
-    //   //   return;
-    //   // }
-
-    //   if (compressedVideo == null) {
-    //     // Compression failed, check original video size
-    //     final originalVideoFile = File(widget.videoPath);
-    //     final originalFileSize = await originalVideoFile.length();
-
-    //     setState(() => _isLoading = false);
-
-    //     if (originalFileSize > 30 * 1024 * 1024) {
-    //       // Original video is too large
-    //       _showErrorDialog(
-    //         context,
-    //         'Note',
-    //         'Video is too large. Please record a shorter video.\nव्हिडिओ खूप मोठा आहे. कृपया एक लहान व्हिडिओ रेकॉर्ड करा',
-    //       );
-    //     } else {
-    //       // Compression failed for other reasons
-    //       _showErrorDialog(
-    //         context,
-    //         'Note',
-    //         'Video submit failed. Please try again.\nव्हिडिओ सबमिट करणे अयशस्वी झाले. कृपया पुन्हा प्रयत्न करा.',
-    //       );
-    //     }
-    //     return;
-    //   }
-
-    //   if (compressedVideo.filesize! > 30 * 1024 * 1024) {
-    //     setState(() => _isLoading = false);
-    //     _showErrorDialog(
-    //       context,
-    //       'Note',
-    //       'Video is too large. Please record a shorter video.\nव्हिडिओ खूप मोठा आहे. कृपया एक लहान व्हिडिओ रेकॉर्ड करा',
-    //     );
-    //     return;
-    //   }
-
     try {
       // Step 1: Check if original video file exists
       final originalVideoFile = File(widget.videoPath);
@@ -293,8 +224,7 @@ class _VideoPlayerKYCScreenState extends State<VideoPlayerKYCScreen> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://testingpcmcpensioner.altwise.in/api/aadhar/submitKycData'),
+        Uri.parse('https://lc.pcmcpensioner.in/api/aadhar/submitKycData'),
       );
 
       // Adding fields and files to the request

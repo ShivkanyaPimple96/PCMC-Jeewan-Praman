@@ -234,8 +234,7 @@ class _DeclarationPageScreenState extends State<DeclarationPageScreen> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://testingpcmcpensioner.altwise.in/api/aadhar/SubmitAadharData'),
+        Uri.parse('https://lc.pcmcpensioner.in/api/aadhar/SubmitAadharData'),
       );
 
       request.fields['isHavingJob'] = hasJob ?? "";

@@ -148,17 +148,6 @@ class _KycDeclarationScreenState extends State<KycDeclarationScreen> {
       isLoading = true; // Show loader on button
     });
 
-    // Declare variables to use in all branches
-    // String? fullName;
-    // String? aadhaarNumber;
-    // String? verificationStatus;
-    // String? ppoNumber;
-    // String? mobileNumber;
-    // String? url;
-    // String? addresss;
-    // String? bankName;
-    // String? gender;
-
     try {
       var request = http.MultipartRequest(
         'POST',

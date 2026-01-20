@@ -74,3 +74,5 @@ class ResponsiveScreen extends StatelessWidget {
     );
   }
 }
+
+// The following two classes are identical and represent response screens.

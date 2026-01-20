@@ -98,10 +98,9 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
 
       _controller = CameraController(
         selectedCamera,
-        ResolutionPreset
-            .medium, // Changed from low to medium for better compatibility
+        ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420, // Better compatibility
+        imageFormatGroup: ImageFormatGroup.yuv420,
       );
 
       _initializeControllerFuture = _controller!.initialize();
@@ -316,23 +315,13 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final preview = CameraPreview(_controller!);
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
 
     // Calculate responsive dimensions
-    // Using 90% of screen width with max constraint
-    final containerWidth = min(width * 0.9, 350.0);
-    // Maintain aspect ratio for height
-    final containerHeight = containerWidth * 1.1;
-
-    // Calculate preview dimensions based on container
-    final previewWidth = containerHeight * 1.1;
-    final previewHeight = containerWidth;
-
-    // Set rotation angle based on camera type
-    double rotationAngle = isFrontCamera ? -pi / 2 : pi / 2;
+    final containerWidth = min(width * 0.9, 400.0);
+    final containerHeight = containerWidth * 1.3;
 
     return Container(
       height: containerHeight,
@@ -348,68 +337,91 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
         borderRadius: BorderRadius.circular(15),
         child: Stack(
           children: [
-            Align(
-              alignment: Alignment.center,
-              child: Transform.rotate(
-                angle: rotationAngle,
+            // Camera preview without rotation
+            Positioned.fill(
+              child: FittedBox(
+                fit: BoxFit.cover,
                 child: SizedBox(
-                  width: width * 1.1,
-                  height: height * 0.35,
-                  child: preview,
+                  width: _controller!.value.previewSize!.height,
+                  height: _controller!.value.previewSize!.width,
+                  child: CameraPreview(_controller!),
                 ),
               ),
             ),
+            // Instructions overlay (when not recording)
             if (!isRecording)
               Positioned(
-                top: height * 0.020,
-                left: width * 0.15,
-                right: width * 0.025,
-                child: Text(
-                  'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
-                  style: TextStyle(
-                    fontSize: width * 0.035,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                top: 16,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  textAlign: TextAlign.left,
+                  child: Text(
+                    'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
+                    style: TextStyle(
+                      fontSize: width * 0.035,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
                 ),
               ),
+            // Recording indicator (when recording)
             if (isRecording)
               Positioned(
-                right: width * 0.05,
-                top: height * 0.015,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Recording... ${_elapsedTime}s',
-                      style: TextStyle(
-                        fontSize: width * 0.045,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
+                right: 16,
+                top: 16,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.radio_button_checked,
+                            color:
+                                _isBlinking ? Colors.red : Colors.transparent,
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Recording... ${_elapsedTime}s',
+                            style: TextStyle(
+                              fontSize: width * 0.04,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(height: height * 0.012),
-                    Icon(
-                      Icons.radio_button_checked,
-                      color: _isBlinking ? Colors.red : Colors.transparent,
-                      size: width * 0.125,
-                    ),
-                    Text(
-                      'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                      style: TextStyle(
-                        fontSize: width * 0.04,
-                        color: Colors.white,
+                      SizedBox(height: 8),
+                      Text(
+                        'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+                        style: TextStyle(
+                          fontSize: width * 0.035,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
-                      style: TextStyle(
-                        fontSize: width * 0.04,
-                        color: Colors.white,
+                      Text(
+                        'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
+                        style: TextStyle(
+                          fontSize: width * 0.035,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -468,94 +480,97 @@ class _VideoRecordKYCScreenState extends State<VideoRecordKYCScreen> {
                       );
                     }
 
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(height: height * 0.025),
-                          Center(
-                            child: Text(
-                              'Click Pensioner Video',
-                              style: TextStyle(
-                                fontSize: width * 0.06,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                                letterSpacing: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Center(
-                            child: Text(
-                              'पेंशनधारक व्यक्तीचा व्हिडिओ काढा',
-                              style: TextStyle(
-                                fontSize: width * 0.045,
-                                color: Colors.black54,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.02,
-                              right: width * 0.02,
-                              top: height * 0.030,
-                            ),
-                            child: _buildCameraPreview(),
-                          ),
-                          SizedBox(height: height * 0.012),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton.icon(
-                                onPressed: (isRecording || _isInitializing)
-                                    ? null
-                                    : startVideoRecording,
-                                icon: Icon(
-                                  Icons.videocam,
-                                  color: Colors.black,
-                                  size: width * 0.05,
+                    return SingleChildScrollView(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: height * 0.025),
+                            Center(
+                              child: Text(
+                                'Click Pensioner Video',
+                                style: TextStyle(
+                                  fontSize: width * 0.06,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                  letterSpacing: 1.5,
                                 ),
-                                label: Text(
-                                  'Start Recording\nव्हिडिओ रेकॉर्ड करा',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: width * 0.04),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Center(
+                              child: Text(
+                                'पेंशनधारक व्यक्तीचा व्हिडिओ काढा',
+                                style: TextStyle(
+                                  fontSize: width * 0.045,
+                                  color: Colors.black54,
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF92B7F7),
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.02,
+                                right: width * 0.02,
+                                top: height * 0.030,
+                              ),
+                              child: _buildCameraPreview(),
+                            ),
+                            SizedBox(height: height * 0.025),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: (isRecording || _isInitializing)
+                                      ? null
+                                      : startVideoRecording,
+                                  icon: Icon(
+                                    Icons.videocam,
+                                    color: Colors.black,
+                                    size: width * 0.05,
                                   ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.1,
-                                    vertical: height * 0.012,
+                                  label: Text(
+                                    'Start Recording\nव्हिडिओ रेकॉर्ड करा',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: width * 0.04),
                                   ),
-                                ),
-                              ),
-                              SizedBox(width: width * 0.05),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.switch_camera_sharp,
-                                      color: const Color(0xFF92B7F7),
-                                      size: width * 0.1,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF92B7F7),
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
                                     ),
-                                    onPressed: (isRecording || _isInitializing)
-                                        ? null
-                                        : switchCamera,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.1,
+                                      vertical: height * 0.012,
+                                    ),
                                   ),
-                                  Text(
-                                    "कॅमेरा बदला",
-                                    style: TextStyle(fontSize: width * 0.035),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: height * 0.05),
-                        ],
+                                ),
+                                SizedBox(width: width * 0.05),
+                                Column(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.switch_camera_sharp,
+                                        color: const Color(0xFF92B7F7),
+                                        size: width * 0.1,
+                                      ),
+                                      onPressed:
+                                          (isRecording || _isInitializing)
+                                              ? null
+                                              : switchCamera,
+                                    ),
+                                    Text(
+                                      "कॅमेरा बदला",
+                                      style: TextStyle(fontSize: width * 0.035),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: height * 0.05),
+                          ],
+                        ),
                       ),
                     );
                   } else {

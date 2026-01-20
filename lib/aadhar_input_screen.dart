@@ -72,7 +72,8 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
       final response = await http.get(Uri.parse(url));
 
       print('API Response Status: ${response.statusCode}');
-      print('API Response Body: ${response.body}');
+      print(
+          'API Response Body fate3r hittimg adhar input screen: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);

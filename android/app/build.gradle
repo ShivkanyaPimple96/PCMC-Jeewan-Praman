@@ -10,24 +10,25 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+
 android {
     namespace = "com.altwise.jeevanpraman"
-    compileSdk = 35  // Use direct value instead of flutter.compileSdkVersion
+    compileSdk = 36  // Changed from 35 to 36
     ndkVersion = "26.1.10909125"
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17  // Changed from 1.8 to 17
+        targetCompatibility = JavaVersion.VERSION_17  // Changed from 1.8 to 17
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"  // Changed from 1.8 to 17
     }
 
     defaultConfig {
         applicationId = "com.altwise.jeevanpraman"
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36  // Changed from 35 to 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
@@ -53,11 +54,84 @@ android {
             shrinkResources = true
         }
     }
+    
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
 }
 
 flutter {
     source = "../.."
 }
+
+// android {
+//     namespace = "com.altwise.jeevanpraman"
+//     compileSdk = 35  // Use direct value instead of flutter.compileSdkVersion
+//     ndkVersion = "26.1.10909125"
+//     // compileSdk = flutter.compileSdkVersion
+//     // ndkVersion = flutter.ndkVersion
+//     compileOptions {
+//         sourceCompatibility = JavaVersion.VERSION_1_8
+//         targetCompatibility = JavaVersion.VERSION_1_8
+//     }
+
+//     kotlinOptions {
+//         jvmTarget = "1.8"
+//     }
+
+//     defaultConfig {
+//         applicationId = "com.altwise.jeevanpraman"
+//         minSdk = 21
+//         targetSdk = 35
+//         versionCode = flutter.versionCode
+//         versionName = flutter.versionName
+
+//         // Support for 16 KB page sizes
+//         ndk {
+//             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+//         }
+//     }
+
+//     signingConfigs {
+//         release {
+//             keyAlias = keystoreProperties['keyAlias']
+//             keyPassword = keystoreProperties['keyPassword']
+//             storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+//             storePassword = keystoreProperties['storePassword']
+//         }
+//     }
+    
+//     buildTypes {
+//         release {
+//             signingConfig = signingConfigs.release
+//             minifyEnabled = true
+//             shrinkResources = true
+//         }
+//     }
+//      bundle {
+//         language {
+//             enableSplit = false
+//         }
+//         density {
+//             enableSplit = true
+//         }
+//         abi {
+//             enableSplit = true
+//         }
+//     }
+// }
+
+// flutter {
+//     source = "../.."
+// }
 
 // plugins {
 //     id "com.android.application"

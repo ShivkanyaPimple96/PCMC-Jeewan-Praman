@@ -28,6 +28,7 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
   String? fullName;
   String? mobileNumber;
   bool _isPpoEditable = true; // Add this new variable
+  bool _isMobileEditable = false;
 
   // Countdown variables
   int _countdown = 30;
@@ -76,11 +77,12 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
       final response = await http.get(Uri.parse(url));
 
       print('API Response Status: ${response.statusCode}');
-      print('API Response Body: ${response.body}');
+      print(
+          'API Response Body after using Get Data Using PPO Number: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        print('Response Body: ${response.body}');
+        print('after using Get Data Using PPO Number: ${response.body}');
         setState(() {
           fullName = data['data']['FullName'];
           mobileNumber = data['data']['MobileNumber'];
@@ -176,7 +178,8 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
-        print('Response Body: ${response.body}');
+        print(
+            'Response Body user details against PPO Number and otp: ${response.body}');
 
         // Extract top-level fields
         int statusCode = responseData['StatusCode'];
@@ -407,52 +410,153 @@ class _EnterPpoNumberKycScreenState extends State<EnterPpoNumberKycScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Enter Your Mobile Number\nतुमचा मोबाईल नंबर टाका',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 60,
-                    width: 300,
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Color(0xFF92B7F7), width: 2),
-                    ),
-                    child: TextFormField(
-                      controller: _mobileNumberController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        // labelText: 'Mobile Number',
-                        border: InputBorder.none,
+                  // Add this variable at the top of your state class with other boolean variables
+                  // Add this new variable
+
+// Replace the existing mobile number Container (around line 420) with this code:
+                  Column(
+                    children: [
+                      const Text(
+                        'Enter Your Mobile Number\nतुमचा मोबाईल नंबर टाका',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                      const SizedBox(height: 10),
+                      // Mobile Number Field with integrated Edit button
+                      Container(
+                        height: 60,
+                        width: 300,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 12.0),
+                        decoration: BoxDecoration(
+                          color: _isMobileEditable
+                              ? Colors.white
+                              : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _isMobileEditable
+                                ? Colors.green
+                                : Color(0xFF92B7F7),
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _mobileNumberController,
+                                keyboardType: TextInputType.phone,
+                                enabled: _isMobileEditable,
+                                maxLength: 10,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  counterText: '',
+                                  hintText: 'Mobile Number',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                ),
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isMobileEditable
+                                      ? Colors.black
+                                      : Colors.black54,
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    mobileNumber = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            // Edit/Done button with icon and text inside the field
+                            if (!_showOtpField)
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _isMobileEditable = !_isMobileEditable;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _isMobileEditable
+                                          ? Icons.check
+                                          : Icons.edit,
+                                      color: _isMobileEditable
+                                          ? Colors.green
+                                          : Colors.blue,
+                                      size: 18,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      _isMobileEditable ? 'Done' : 'Edit',
+                                      style: TextStyle(
+                                        color: _isMobileEditable
+                                            ? Colors.green
+                                            : Colors.blue,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          mobileNumber = value;
-                        });
-                      },
-                    ),
-                    // child: Text(
-                    //   'Mobile Number: $mobileNumber',
-                    //   style: const TextStyle(
-                    //     fontSize: 20,
-                    //     fontWeight: FontWeight.bold,
-                    //     color: Colors.black,
-                    //   ),
-                    // ),
+                    ],
                   ),
+                  // const Text(
+                  //   'Enter Your Mobile Number\nतुमचा मोबाईल नंबर टाका',
+                  //   style: TextStyle(
+                  //     fontSize: 20,
+                  //     fontWeight: FontWeight.bold,
+                  //     color: Colors.black,
+                  //   ),
+                  //   textAlign: TextAlign.center,
+                  // ),
+                  // const SizedBox(height: 10),
+                  // Container(
+                  //   height: 60,
+                  //   width: 300,
+                  //   padding: EdgeInsets.all(16.0),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white,
+                  //     borderRadius: BorderRadius.circular(10),
+                  //     border: Border.all(color: Color(0xFF92B7F7), width: 2),
+                  //   ),
+                  //   child: TextFormField(
+                  //     controller: _mobileNumberController,
+                  //     keyboardType: TextInputType.phone,
+                  //     decoration: InputDecoration(
+                  //       // labelText: 'Mobile Number',
+                  //       border: InputBorder.none,
+                  //     ),
+                  //     style: TextStyle(
+                  //       fontSize: 20,
+                  //       fontWeight: FontWeight.bold,
+                  //       color: Colors.black,
+                  //     ),
+                  //     onChanged: (value) {
+                  //       setState(() {
+                  //         mobileNumber = value;
+                  //       });
+                  //     },
+                  //   ),
+                  //   // child: Text(
+                  //   //   'Mobile Number: $mobileNumber',
+                  //   //   style: const TextStyle(
+                  //   //     fontSize: 20,
+                  //   //     fontWeight: FontWeight.bold,
+                  //   //     color: Colors.black,
+                  //   //   ),
+                  //   // ),
+                  // ),
                   const SizedBox(height: 20),
                   if (_showGetOtpButton)
                     ElevatedButton(

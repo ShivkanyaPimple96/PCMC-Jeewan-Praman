@@ -549,6 +549,9 @@ class _PhotoClickKYCScreenState extends State<PhotoClickKYCScreen> {
 }
 
 // ==================== FIXED CAMERA SCREEN ====================
+
+// ==================== FIXED CAMERA SCREEN ====================
+
 class CameraScreen extends StatefulWidget {
   final CameraDescription camera;
 
@@ -580,7 +583,9 @@ class _CameraScreenState extends State<CameraScreen> {
   void _initializeCamera() {
     _controller = CameraController(
       _currentCamera,
-      ResolutionPreset.low,
+      ResolutionPreset.high,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
     );
     _initializeControllerFuture = _controller.initialize();
   }
@@ -627,16 +632,6 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
-  // Get rotation angle based on camera direction
-  double _getRotationAngle() {
-    if (_currentCamera.lensDirection == CameraLensDirection.front) {
-      return -math.pi / 2; // -90 degrees (counter-clockwise) for front camera
-    } else {
-      return math.pi /
-          2; // +90 degrees (clockwise) for back camera - reverse direction
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -659,16 +654,31 @@ class _CameraScreenState extends State<CameraScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done &&
               !_isInitializing) {
+            // Get the screen size
+            final size = MediaQuery.of(context).size;
+
+            // Calculate the correct aspect ratio for portrait mode
+            // Camera preview is in landscape, so we swap width/height
+            final deviceRatio = size.width / size.height;
+
             return Stack(
               children: [
-                // FIXED: Rotated Camera Preview by 90 degrees counter-clockwise
-                // Works for both front and back cameras
+                // Camera preview that fills the screen properly in portrait mode
                 Center(
-                  child: Transform.rotate(
-                    angle: _getRotationAngle(), // Dynamic angle based on camera
-                    child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: CameraPreview(_controller),
+                  child: AspectRatio(
+                    aspectRatio: deviceRatio,
+                    child: ClipRect(
+                      child: OverflowBox(
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: size.width,
+                            height: size.width * _controller.value.aspectRatio,
+                            child: CameraPreview(_controller),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),

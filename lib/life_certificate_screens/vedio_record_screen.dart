@@ -47,38 +47,91 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
   Timer? _timer;
   int _elapsedTime = 0;
   bool isFrontCamera = true;
+  bool _isInitializing = false;
 
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     initCamera();
   }
 
   Future<void> initCamera() async {
-    cameras = await availableCameras();
-    setCamera(CameraLensDirection.front);
+    try {
+      cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        _showErrorToast("No cameras available");
+        return;
+      }
+      await setCamera(CameraLensDirection.front);
+    } catch (e) {
+      print('Error initializing camera: $e');
+      _showErrorToast("Failed to initialize camera");
+    }
   }
 
   Future<void> setCamera(CameraLensDirection direction) async {
-    final selectedCamera =
-        cameras.firstWhere((camera) => camera.lensDirection == direction);
+    if (_isInitializing) return;
 
-    _controller = CameraController(selectedCamera, ResolutionPreset.medium);
-    _initializeControllerFuture = _controller!.initialize();
-    setState(() {});
+    try {
+      _isInitializing = true;
+
+      if (_controller != null) {
+        await _controller!.dispose();
+        _controller = null;
+      }
+
+      final selectedCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == direction,
+        orElse: () => cameras.first,
+      );
+
+      _controller = CameraController(
+        selectedCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.yuv420,
+      );
+
+      _initializeControllerFuture = _controller!.initialize();
+      await _initializeControllerFuture;
+
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    } catch (e) {
+      print('Error setting camera: $e');
+      _isInitializing = false;
+      if (mounted) {
+        _showErrorToast("Camera setup failed");
+      }
+    }
   }
 
   Future<void> switchCamera() async {
-    if (isFrontCamera) {
-      await setCamera(CameraLensDirection.back);
-    } else {
-      await setCamera(CameraLensDirection.front);
+    if (_isInitializing || isRecording) return;
+
+    try {
+      if (isFrontCamera) {
+        await setCamera(CameraLensDirection.back);
+      } else {
+        await setCamera(CameraLensDirection.front);
+      }
+      isFrontCamera = !isFrontCamera;
+    } catch (e) {
+      print('Error switching camera: $e');
+      _showErrorToast("Failed to switch camera");
     }
-    isFrontCamera = !isFrontCamera;
   }
 
   @override
   void dispose() {
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _controller?.dispose();
     _blinkTimer?.cancel();
     _timer?.cancel();
@@ -86,16 +139,14 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
   }
 
   Future<void> startVideoRecording() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized) {
+      _showErrorToast("Camera not initialized");
+      return;
+    }
+
+    if (isRecording) return;
 
     try {
-      final Orientation orientation = MediaQuery.of(context).orientation;
-      SystemChrome.setPreferredOrientations([
-        orientation == Orientation.portrait
-            ? DeviceOrientation.portraitUp
-            : DeviceOrientation.landscapeLeft,
-      ]);
-
       final Directory extDir = await getApplicationDocumentsDirectory();
       final String dirPath = '${extDir.path}/Videos';
       await Directory(dirPath).create(recursive: true);
@@ -104,9 +155,10 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
           '$dirPath/${DateTime.now().millisecondsSinceEpoch}.mp4';
 
       await _controller!.startVideoRecording();
+
       setState(() {
         isRecording = true;
-        videoPath = filePath.endsWith('.mp4') ? filePath : '$filePath.mp4';
+        videoPath = filePath;
         _elapsedTime = 0;
         _currentDateTime =
             DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -117,11 +169,25 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
 
       await Future.delayed(Duration(seconds: duration));
 
-      // Stop recording and save file
+      if (!isRecording || _controller == null) return;
+
       final XFile videoFile = await _controller!.stopVideoRecording();
       final File recordedFile = File(videoFile.path);
+
+      if (!await recordedFile.exists()) {
+        throw Exception("Video file was not created");
+      }
+
+      final fileSize = await recordedFile.length();
+      if (fileSize == 0) {
+        throw Exception("Video file is empty");
+      }
+
       await recordedFile.copy(videoPath!);
-      await recordedFile.delete();
+
+      if (await File(videoPath!).exists()) {
+        await recordedFile.delete();
+      }
 
       setState(() {
         isRecording = false;
@@ -130,81 +196,85 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
       _stopBlinking();
       _timer?.cancel();
 
-      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      _showSuccessToast("Video Recorded!");
 
-      Fluttertoast.showToast(
-        msg: "Video Recorded!",
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-      );
+      await Future.delayed(Duration(milliseconds: 300));
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => RecordedVideoScreen(
-            ppoNumber: widget.ppoNumber,
-            latitude: widget.latitude,
-            longitude: widget.longitude,
-            address: widget.address,
-            videoPath: videoPath!,
-            recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-            recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-            imagePath: widget.imagePath,
-            aadhaarNumber: widget.aadhaarNumber,
-            isFrontCamera: isFrontCamera,
-            mobileNumber: widget.mobileNumber,
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecordedVideoScreen(
+              ppoNumber: widget.ppoNumber,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
+              address: widget.address,
+              videoPath: videoPath!,
+              recordedDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+              recordedTime: DateFormat('HH:mm:ss').format(DateTime.now()),
+              imagePath: widget.imagePath,
+              aadhaarNumber: widget.aadhaarNumber,
+              isFrontCamera: isFrontCamera,
+              mobileNumber: widget.mobileNumber,
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
       print('Error recording video: $e');
 
-      if (isRecording) {
+      if (isRecording && _controller != null) {
         try {
           await _controller!.stopVideoRecording();
         } catch (stopError) {
           print('Error stopping video after failure: $stopError');
         }
-
-        setState(() {
-          isRecording = false;
-        });
-
-        _stopBlinking();
-        _timer?.cancel();
-
-        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-
-        Fluttertoast.showToast(
-          msg:
-              "Recording failed: ${e.toString().substring(0, min(50, e.toString().length))}",
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
       }
+
+      setState(() {
+        isRecording = false;
+      });
+
+      _stopBlinking();
+      _timer?.cancel();
+
+      String errorMsg = "Recording failed";
+      if (e.toString().contains('Camera')) {
+        errorMsg = "Camera error occurred";
+      } else if (e.toString().contains('permission')) {
+        errorMsg = "Camera permission denied";
+      }
+
+      _showErrorToast(errorMsg);
     }
   }
 
   void _startBlinking() {
     _blinkTimer = Timer.periodic(Duration(milliseconds: 500), (timer) {
-      setState(() {
-        _isBlinking = !_isBlinking;
-      });
+      if (mounted) {
+        setState(() {
+          _isBlinking = !_isBlinking;
+        });
+      }
     });
   }
 
   void _stopBlinking() {
     _blinkTimer?.cancel();
-    setState(() {
-      _isBlinking = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isBlinking = false;
+      });
+    }
   }
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        _elapsedTime++;
-      });
+      if (mounted) {
+        setState(() {
+          _elapsedTime++;
+        });
+      }
 
       if (_elapsedTime >= duration) {
         _timer?.cancel();
@@ -212,28 +282,35 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
     });
   }
 
+  void _showErrorToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      toastLength: Toast.LENGTH_LONG,
+    );
+  }
+
+  void _showSuccessToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
   Widget _buildCameraPreview() {
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final preview = CameraPreview(_controller!);
     final size = MediaQuery.of(context).size;
     final width = size.width;
-    final height = size.height;
 
-    // Calculate responsive dimensions
-    // Using 90% of screen width with max constraint
-    final containerWidth = min(width * 0.9, 345.0);
-    // Maintain aspect ratio for height
-    final containerHeight = containerWidth * 1.1;
-
-    // Calculate preview dimensions based on container
-    // final previewWidth = containerHeight * 1.1;
-    // final previewHeight = containerWidth;
-
-    // Set rotation angle based on camera type
-    double rotationAngle = isFrontCamera ? -pi / 2 : pi / 2;
+    final cameraAspectRatio = _controller!.value.aspectRatio;
+    final containerWidth = width * 0.9;
+    final containerHeight = containerWidth * 1.2;
 
     return Container(
       height: containerHeight,
@@ -249,75 +326,84 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
         borderRadius: BorderRadius.circular(15),
         child: Stack(
           children: [
-            Align(
-              alignment: Alignment.center,
-              child: Transform.rotate(
-                angle: rotationAngle,
-                child: SizedBox(
-                  width: width * 1.1,
-                  height: height * 0.35,
-                  child: preview,
-                ),
+            Center(
+              child: AspectRatio(
+                aspectRatio: 1 / cameraAspectRatio,
+                child: CameraPreview(_controller!),
               ),
             ),
             if (!isRecording)
               Positioned(
-                top: height * 0.027,
-                left: width * 0.15,
-                right: width * 0.025,
-                child: Text(
-                  'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
-                  style: TextStyle(
-                    fontSize: width * 0.035,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(1, 1),
-                        blurRadius: 3,
-                        color: Colors.black54,
-                      ),
-                    ],
+                top: 16,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  textAlign: TextAlign.left,
+                  child: Text(
+                    'Make sure your face is clearly visible\nLook left or right side\nPlease look front of the camera',
+                    style: TextStyle(
+                      fontSize: width * 0.035,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
                 ),
               ),
             if (isRecording)
               Positioned(
-                right: width * 0.05,
-                top: height * 0.015,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Recording... ${_elapsedTime}s',
-                      style: TextStyle(
-                        fontSize: width * 0.045,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
+                right: 16,
+                top: 16,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.radio_button_checked,
+                            color:
+                                _isBlinking ? Colors.red : Colors.transparent,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Recording... ${_elapsedTime}s',
+                            style: TextStyle(
+                              fontSize: width * 0.04,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(height: height * 0.012),
-                    Icon(
-                      Icons.radio_button_checked,
-                      color: _isBlinking ? Colors.red : Colors.transparent,
-                      size: width * 0.125,
-                    ),
-                    Text(
-                      'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                      style: TextStyle(
-                        fontSize: width * 0.04,
-                        color: Colors.white,
+                      SizedBox(height: 8),
+                      Text(
+                        'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+                        style: TextStyle(
+                          fontSize: width * 0.035,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
-                      style: TextStyle(
-                        fontSize: width * 0.04,
-                        color: Colors.white,
+                      Text(
+                        'Time: ${DateFormat('HH:mm:ss').format(DateTime.now())}',
+                        style: TextStyle(
+                          fontSize: width * 0.035,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -352,6 +438,28 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
               future: _initializeControllerFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 60, color: Colors.red),
+                          SizedBox(height: 20),
+                          Text(
+                            'Camera initialization failed',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: initCamera,
+                            child: Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   return Center(
                     child: SingleChildScrollView(
                       child: Padding(
@@ -362,55 +470,51 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Center(
-                              child: Text(
-                                'Capture Pensioner Video',
-                                style: TextStyle(
-                                  fontSize: width * 0.06,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                  letterSpacing: 1.5,
-                                ),
-                                textAlign: TextAlign.center,
+                            Text(
+                              'Capture Pensioner Video',
+                              style: TextStyle(
+                                fontSize: width * 0.06,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                letterSpacing: 1.5,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             SizedBox(height: height * 0.01),
-                            Center(
-                              child: Text(
-                                'पेन्शनर व्यक्तीचा व्हिडिओ काढा',
-                                style: TextStyle(
-                                  fontSize: width * 0.045,
-                                  color: Colors.black54,
-                                ),
-                                textAlign: TextAlign.center,
+                            Text(
+                              'पेन्शनर व्यक्तीचा व्हिडिओ काढा',
+                              style: TextStyle(
+                                fontSize: width * 0.045,
+                                color: Colors.black54,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             SizedBox(height: height * 0.025),
                             _buildCameraPreview(),
-                            SizedBox(height: height * 0.015),
+                            SizedBox(height: height * 0.025),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 ElevatedButton.icon(
-                                  onPressed: isRecording
+                                  onPressed: (isRecording || _isInitializing)
                                       ? null
-                                      : () async {
-                                          await startVideoRecording();
-                                        },
+                                      : startVideoRecording,
                                   icon: Icon(
                                     Icons.videocam,
                                     size: width * 0.06,
+                                    color: Colors.white,
                                   ),
                                   label: Text(
                                     'Start Recording\nव्हिडिओ रेकॉर्ड करा',
                                     style: TextStyle(
                                       fontSize: width * 0.04,
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
                                     backgroundColor: Colors.green,
+                                    disabledBackgroundColor: Colors.grey,
                                     padding: EdgeInsets.symmetric(
                                       horizontal: width * 0.075,
                                       vertical: height * 0.015,
@@ -423,11 +527,15 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
                                     IconButton(
                                       icon: Icon(
                                         Icons.switch_camera_sharp,
-                                        color: Colors.green,
+                                        color: (isRecording || _isInitializing)
+                                            ? Colors.grey
+                                            : Colors.green,
                                         size: width * 0.1,
                                       ),
                                       onPressed:
-                                          isRecording ? null : switchCamera,
+                                          (isRecording || _isInitializing)
+                                              ? null
+                                              : switchCamera,
                                     ),
                                     Text(
                                       "कॅमेरा बदला",
@@ -439,7 +547,7 @@ class _VideoRecordScreenState extends State<VideoRecordScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: height * 0.05),
+                            SizedBox(height: height * 0.03),
                           ],
                         ),
                       ),

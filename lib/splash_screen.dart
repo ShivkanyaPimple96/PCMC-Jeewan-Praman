@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                     const Text(
-                      "(2025-2026)",
+                      "(2026-2027)",
                       style: TextStyle(
                           fontWeight: FontWeight.normal, fontSize: 18),
                     ),

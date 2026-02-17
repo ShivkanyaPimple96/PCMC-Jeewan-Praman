@@ -281,7 +281,7 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
           );
         },
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 10),
           backgroundColor: Colors.blue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
@@ -290,7 +290,7 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
           shadowColor: Colors.blue.withOpacity(0.3),
         ),
         child: Text(
-          "Generate Your Life Certificate\nजीवन प्रमाणपत्र तयार करा",
+          "Generate Your Life Certificate \nजीवन प्रमाणपत्र तयार करा\n(2026-2027)",
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -461,7 +461,7 @@ class _ViewButtonScreenState extends State<ViewButtonScreen> {
           shadowColor: Colors.grey.withOpacity(0.3),
         ),
         child: Text(
-          "Re-Generate Your Certificate\nपुन्हा जीवन प्रमाणपत्र तयार करा",
+          "Re-Generate Your Certificate\nपुन्हा जीवन प्रमाणपत्र तयार करा\n(2026-2027)",
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

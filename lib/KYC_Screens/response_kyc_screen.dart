@@ -78,16 +78,19 @@ class _ResponseKYCScreenState extends State<ResponseKYCScreen> {
         } else {
           // Handle unsuccessful API response
           _showErrorDialog(
-              jsonResponse['message']?.toString() ?? 'Failed to fetch data');
+              // jsonResponse['message']?.toString() ?? 'Failed to fetch data'
+              'Failed to fetch data please try again');
         }
       } else {
         // Handle non-200 status codes
         _showErrorDialog(
-            'Failed to fetch data. Status code: ${response.statusCode}');
+            // 'Failed to fetch data. Status code: ${response.statusCode}'
+            'Failed to fetch data. Please try Again');
       }
     } catch (e) {
       // Handle errors
-      _showErrorDialog('Error occurred: $e');
+      // _showErrorDialog('Error occurred: $e');
+      _showErrorDialog('Please check your internet connection and try again.');
     } finally {
       if (mounted) {
         setState(() {

@@ -456,11 +456,11 @@ class _AadharInputScreenState extends State<AadharInputScreen> {
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
                                   counterText: '',
-                                  hintText: 'Mobile Number',
+                                  hintText: ' Enter Mobile Number',
                                   hintStyle: TextStyle(color: Colors.grey[400]),
                                 ),
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: _isMobileEditable
                                       ? Colors.black

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pcmc_jeevan_praman/splash_screen.dart';
 
 // letest update 10-02-2026
+// letest updated on github 20-02-2026
 void main() {
   // Override global HTTP settings to bypass SSL certificate verification
   HttpOverrides.global = MyHttpOverrides();

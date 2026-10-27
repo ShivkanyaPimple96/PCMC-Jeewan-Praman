@@ -1,80 +1,52 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:pcmc_jeevan_praman/splash_screen.dart';
+import 'package:provider/provider.dart';
+import 'config/app_theme.dart';
+import 'config/routes.dart';
+import 'providers/kyc_provider.dart';
+import 'screens/splash_screen.dart';
+import 'screens/start_screen.dart';
+import 'screens/ppo_entry_screen.dart';
+import 'screens/pensioner_details_screen.dart';
+import 'screens/aadhaar_verification_screen.dart';
+import 'screens/aadhaar_upload_screen.dart';
+import 'screens/photo_capture_screen.dart';
+import 'screens/video_capture_screen.dart';
+import 'screens/declaration_screen.dart';
+import 'screens/success_screen.dart';
+import 'screens/view_certificate_screen.dart';
 
-// letest update 10-02-2026
-// letest updated on github 20-02-2026
 void main() {
-  // Override global HTTP settings to bypass SSL certificate verification
-  HttpOverrides.global = MyHttpOverrides();
-
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const PCMCLifeCertificateApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PCMCLifeCertificateApp extends StatelessWidget {
+  const PCMCLifeCertificateApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      // title: 'Flutter Demo',
-      home: ResponsiveScreen(),
+    return ChangeNotifierProvider(
+      create: (_) => KycProvider(),
+      child: MaterialApp(
+        title: 'PCMC Life Certificate',
+        theme: AppTheme.theme,
+        debugShowCheckedModeBanner: false,
+        initialRoute: AppRoutes.start,
+        routes: {
+          // AppRoutes.splash: (_) => const SplashScreen(),
+          AppRoutes.start: (_) => const StartScreen(),
+          AppRoutes.ppoEntry: (_) => const PpoEntryScreen(),
+          AppRoutes.pensionerDetails: (_) => const PensionerDetailsScreen(),
+          AppRoutes.aadhaarVerification: (_) =>
+              const AadhaarVerificationScreen(),
+          AppRoutes.aadhaarUpload: (_) => const AadhaarUploadScreen(),
+          AppRoutes.photoCapture: (_) => const PhotoCaptureScreen(),
+          AppRoutes.videoCapture: (_) => const VideoCaptureScreen(),
+          AppRoutes.declaration: (_) => const DeclarationScreen(),
+          AppRoutes.success: (_) => const SuccessScreen(),
+          AppRoutes.viewCertificate: (_) => const ViewCertificateScreen(),
+        },
+      ),
     );
   }
 }
-
-// Define HttpOverrides class to bypass SSL certificate verification
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
-
-// This widget adapts the layout based on screen size
-class ResponsiveScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Check the screen width
-        if (constraints.maxWidth < 600) {
-          // Mobile View (Narrow screen)
-          return SplashScreen();
-        } else {
-          // Tablet or Desktop View (Wide screen)
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Office Login - Tablet View'),
-            ),
-            body: Row(
-              children: [
-                // Sidebar for tablet
-                Container(
-                  width: 0,
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: Text(
-                      'Sidebar Navigation',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ),
-                // Main content area
-                Expanded(
-                  child: SplashScreen(),
-                ),
-              ],
-            ),
-          );
-        }
-      },
-    );
-  }
-}
-
-// The following two classes are identical and represent response screens.
